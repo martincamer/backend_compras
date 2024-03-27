@@ -2,8 +2,30 @@ CREATE TABLE producto (
     id SERIAL PRIMARY KEY,
     detalle varchar(255),
     categoria varchar(255),
-    total_stock numeric,
     precio_und numeric,
+    role_id numeric,
+    usuario varchar,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE orden (
+    id SERIAL PRIMARY KEY,
+    numero_factura_remito numeric,
+    proveedor varchar(255),
+    detalle varchar(255),
+    fecha_factura date,
+    precio_final numeric,
+    descuento numeric,
+    usuario varchar,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE categorias (
+    id SERIAL PRIMARY KEY,
+    detalle varchar(255),
     role_id numeric,
     usuario varchar,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -24,6 +24,17 @@ io.on("connection", (socket) => {
   console.log("A user connected");
 
   // Maneja el evento "nueva-salida"
+  socket.on("crear-producto", (datosSalida) => {
+    console.log("Nuevo producto:", datosSalida);
+    io.emit("crear-producto", datosSalida); // Esto emitirá el evento "nueva-salida" a todos los clientes conectados
+  });
+
+  socket.on("editar-producto", (editarSalida) => {
+    console.log("Editar producto:", editarSalida);
+    io.emit("editar-producto", editarSalida); // Esto emitirá el evento "nueva-salida" a todos los clientes conectados
+  });
+
+  // Maneja el evento "nueva-salida"
   socket.on("nuevo-producto", (datosSalida) => {
     console.log("Nuevo productos:", datosSalida);
     io.emit("nuevo-producto", datosSalida); // Esto emitirá el evento "nueva-salida" a todos los clientes conectados
@@ -32,6 +43,21 @@ io.on("connection", (socket) => {
   socket.on("nueva-categoria", (datosSalida) => {
     console.log("Nuevo categoria:", datosSalida);
     io.emit("nueva-categoria", datosSalida); // Esto emitirá el evento "nueva-salida" a todos los clientes conectados
+  });
+
+  socket.on("editar-categoria", (datosSalida) => {
+    console.log("Nuevo categoria:", datosSalida);
+    io.emit("editar-categoria", datosSalida); // Esto emitirá el evento "nueva-salida" a todos los clientes conectados
+  });
+
+  socket.on("eliminar-categoria", (datosSalida) => {
+    console.log("Nuevo categoria:", datosSalida);
+    io.emit("eliminar-categoria", datosSalida); // Esto emitirá el evento "nueva-salida" a todos los clientes conectados
+  });
+
+  socket.on("eliminar-producto", (datosSalida) => {
+    console.log("Nuevo categoria:", datosSalida);
+    io.emit("eliminar-producto", datosSalida); // Esto emitirá el evento "nueva-salida" a todos los clientes conectados
   });
 });
 

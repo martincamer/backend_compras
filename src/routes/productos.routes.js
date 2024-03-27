@@ -11,6 +11,8 @@ import {
   getCategorias,
   crearCategorias,
   actualizarCategorias,
+  getCategoria,
+  eliminarCategoria,
 } from "../controllers/productos.controllers.js";
 import { isAdmin } from "../middlewares/compras.middleware.js";
 
@@ -24,7 +26,11 @@ router.get("/categorias", isAuth, isAdmin, getCategorias);
 
 router.post("/crear-categoria", isAuth, isAdmin, crearCategorias);
 
-router.post("/categorias/:id", isAuth, isAdmin, actualizarCategorias);
+router.put("/editar-categoria/:id", isAuth, isAdmin, actualizarCategorias);
+
+router.get("/categoria/:id", isAuth, isAdmin, getCategoria);
+
+router.delete("/eliminar-categoria/:id", isAuth, isAdmin, eliminarCategoria);
 
 router.post(
   "/productos/rango-fechas",
@@ -33,13 +39,13 @@ router.post(
   getProductosPorRangoDeFechas
 );
 
-router.get("/productos/:id", isAuth, isAdmin, getProducto);
+router.get("/producto/:id", isAuth, isAdmin, getProducto);
 
 router.post("/crear-producto", isAuth, isAdmin, crearProducto);
 
-router.put("/productos/:id", isAuth, isAdmin, actualizarProducto);
+router.put("/editar-producto/:id", isAuth, isAdmin, actualizarProducto);
 
-router.delete("/productos/:id", isAuth, isAdmin, eliminarProducto);
+router.delete("/eliminar-producto/:id", isAuth, isAdmin, eliminarProducto);
 
 router.post(
   "/productos-rango-fechas",

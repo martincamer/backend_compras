@@ -20,14 +20,14 @@ export const getProducto = async (req, res) => {
 };
 
 export const crearProducto = async (req, res, next) => {
-  const { producto } = req.body;
+  const { detalle, categoria, precio_und } = req.body;
 
   const { username, userRole } = req;
 
   try {
     const result = await pool.query(
-      "INSERT INTO producto (producto,usuario, role_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *",
-      [producto, username, userRole]
+      "INSERT INTO producto (detalle,categoria,precio_und,usuario, role_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [detalle, categoria, precio_und, username, userRole]
     );
 
     res.json(result.rows[0]);
@@ -46,11 +46,11 @@ export const actualizarProducto = async (req, res) => {
 
   const { username, userRole } = req;
 
-  const { producto } = req.body;
+  const { detalle, categoria, precio_und } = req.body;
 
   const result = await pool.query(
-    "UPDATE producto = $1, usuario = $2, role_id = $3 WHERE id = $4",
-    [producto, username, userRole, id]
+    "UPDATE producto SET detalle = $1, categoria = $2, precio_und = $3, usuario = $4, role_id = $5 WHERE id = $6",
+    [detalle, categoria, precio_und, username, userRole, id]
   );
 
   if (result.rowCount === 0) {
@@ -159,7 +159,7 @@ export const actualizarCategorias = async (req, res) => {
   const { detalle } = req.body;
 
   const result = await pool.query(
-    "UPDATE categorias = $1, usuario = $2, role_id = $3 WHERE id = $4",
+    "UPDATE categorias SET detalle = $1, usuario = $2, role_id = $3 WHERE id = $4",
     [detalle, username, userRole, id]
   );
 
@@ -172,4 +172,32 @@ export const actualizarCategorias = async (req, res) => {
   return res.json({
     message: "Producto actualizado",
   });
+};
+
+export const getCategoria = async (req, res) => {
+  const result = await pool.query("SELECT * FROM categorias WHERE id = $1", [
+    req.params.id,
+  ]);
+
+  if (result.rowCount === 0) {
+    return res.status(404).json({
+      message: "No existe ningún categorias con ese id",
+    });
+  }
+
+  return res.json(result.rows[0]);
+};
+
+export const eliminarCategoria = async (req, res) => {
+  const result = await pool.query("DELETE FROM categorias WHERE id = $1", [
+    req.params.id,
+  ]);
+
+  if (result.rowCount === 0) {
+    return res.status(404).json({
+      message: "No existe ningún producto con ese id",
+    });
+  }
+
+  return res.sendStatus(204);
 };
