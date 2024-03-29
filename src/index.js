@@ -59,6 +59,16 @@ io.on("connection", (socket) => {
     console.log("Nuevo categoria:", datosSalida);
     io.emit("eliminar-producto", datosSalida); // Esto emitirá el evento "nueva-salida" a todos los clientes conectados
   });
+
+  socket.on("crear-orden", (datosSalida) => {
+    console.log("Nuevo orden dos:", datosSalida);
+    io.emit("crear-orden", datosSalida); // Esto emitirá el evento "nueva-salida" a todos los clientes conectados
+  });
+
+  socket.on("crear-orden-dos", (datosSalida) => {
+    console.log("Nuevo orden dos:", datosSalida);
+    io.emit("crear-orden-dos", datosSalida); // Esto emitirá el evento "nueva-salida" a todos los clientes conectados
+  });
 });
 
 httpServer.listen(PORT, () => {

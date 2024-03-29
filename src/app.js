@@ -2,6 +2,8 @@ import express from "express";
 import morgan from "morgan";
 import authRoutes from "./routes/auth.routes.js";
 import productosRoutes from "./routes/productos.routes.js";
+import ordenesRoutes from "./routes/ordenes.routes.js";
+import ordenesFinalRoutes from "./routes/ordenesfinal.routes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import bodyParser from "body-parser";
@@ -31,8 +33,11 @@ app.get("/api/ping", async (req, res) => {
   const result = await pool.query("SELECT NOW()");
   return res.json(result.rows[0]);
 });
+
 app.use("/api", authRoutes);
 app.use("/api", productosRoutes);
+app.use("/api", ordenesRoutes);
+app.use("/api", ordenesFinalRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {
