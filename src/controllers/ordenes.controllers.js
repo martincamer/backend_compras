@@ -132,3 +132,124 @@ export const getOrdenesMensual = async (req, res, next) => {
     return res.status(500).json({ message: "Error interno del servidor" });
   }
 };
+
+export const getOrdenesPorRangoDeFechas = async (req, res, next) => {
+  try {
+    const { fechaInicio, fechaFin } = req.body;
+
+    // Validación de fechas
+    if (
+      !fechaInicio ||
+      !fechaFin ||
+      !isValidDate(fechaInicio) ||
+      !isValidDate(fechaFin)
+    ) {
+      return res.status(400).json({ message: "Fechas inválidas" });
+    }
+
+    // Función de validación de fecha
+    function isValidDate(dateString) {
+      const regex = /^\d{4}-\d{2}-\d{2}$/;
+      return dateString.match(regex) !== null;
+    }
+
+    // Ajuste de zona horaria UTC
+    const result = await pool.query(
+      "SELECT * FROM orden WHERE created_at BETWEEN $1 AND $2 ORDER BY created_at",
+      [fechaInicio, fechaFin]
+    );
+
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener órdenes:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+export const obtenerValorUnico = async (req, res) => {
+  const productId = req.params.id;
+
+  try {
+    // Obtener los datos JSON actuales de la base de datos
+    const result = await pool.query(
+      "SELECT datos FROM orden WHERE (datos->'productoSeleccionado')::jsonb @> $1",
+      [`[{"id": ${productId}}]`]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "No existe ningún producto con ese id",
+      });
+    }
+
+    const existingJson = result.rows[0].datos;
+
+    // Find the product with the specified id in the productoSeleccionado array
+    const product = existingJson.productoSeleccionado.find(
+      (item) => item.id === parseInt(productId, 10)
+    );
+
+    if (!product) {
+      return res.status(404).json({
+        message: "No existe ningún producto con ese id",
+      });
+    }
+
+    // Devolver el objeto completo del producto
+    return res.json({
+      producto: product,
+    });
+  } catch (error) {
+    console.error("Error durante la operación de obtención del valor:", error);
+    return res.status(500).json({
+      message: "Error interno del servidor",
+      error: error.message,
+    });
+  }
+};
+
+export const editarProductoUnico = async (req, res) => {
+  const productIdToEdit = req.params.id;
+  const updatedProductData = req.body; // Suponiendo que recibes los nuevos datos del producto en el cuerpo de la solicitud
+
+  try {
+    // Obtener los datos JSONB actuales de la base de datos
+    const result = await pool.query(
+      "SELECT datos FROM orden WHERE (datos->'productoSeleccionado')::jsonb @> $1",
+      [`[{"id": ${productIdToEdit}}]`]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "No existe ningún producto con ese id",
+      });
+    }
+
+    const existingJson = result.rows[0].datos;
+
+    // Actualizar el elemento con el id especificado en el array con los nuevos datos
+    const updatedProductos = existingJson.productoSeleccionado.map((item) => {
+      if (item.id === parseInt(productIdToEdit)) {
+        return { ...item, ...updatedProductData };
+      }
+      return item;
+    });
+
+    // Actualizar la base de datos con el JSON modificado
+    await pool.query(
+      "UPDATE orden SET datos = $1 WHERE (datos->'productoSeleccionado')::jsonb @> $2",
+      [
+        { productoSeleccionado: updatedProductos },
+        `[{ "id": ${productIdToEdit} }]`,
+      ]
+    );
+
+    return res.sendStatus(204);
+  } catch (error) {
+    console.error("Error durante la operación de edición:", error);
+    return res.status(500).json({
+      message: "Error interno del servidor",
+      error: error.message,
+    });
+  }
+};

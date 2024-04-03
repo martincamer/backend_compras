@@ -12,16 +12,20 @@ CREATE TABLE producto (
 
 CREATE TABLE orden (
     id SERIAL PRIMARY KEY,
-    numero_factura_remito numeric,
+    numero_factura numeric,
     proveedor varchar(255),
     detalle varchar(255),
     fecha_factura date,
     precio_final numeric,
-    descuento numeric,
+    localidad varchar(255),
+    provincia varchar(255),
+    datos json,
     usuario varchar,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
 
 CREATE TABLE categorias (
     id SERIAL PRIMARY KEY,
