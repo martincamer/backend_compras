@@ -4,6 +4,7 @@ import authRoutes from "./routes/auth.routes.js";
 import productosRoutes from "./routes/productos.routes.js";
 import ordenesRoutes from "./routes/ordenes.routes.js";
 import ordenesFinalRoutes from "./routes/ordenesfinal.routes.js";
+import proveedoresRoutes from "./routes/proveedores.routes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import bodyParser from "body-parser";
@@ -38,6 +39,7 @@ app.use("/api", authRoutes);
 app.use("/api", productosRoutes);
 app.use("/api", ordenesRoutes);
 app.use("/api", ordenesFinalRoutes);
+app.use("/api", proveedoresRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {

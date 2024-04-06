@@ -25,6 +25,15 @@ CREATE TABLE orden (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE proveedores (
+    id SERIAL PRIMARY KEY,
+    proveedor varchar(255),
+    total numeric,
+    comprobantes json,
+    usuario varchar,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 
 CREATE TABLE categorias (
@@ -35,6 +44,11 @@ CREATE TABLE categorias (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE comprobantes (
+    proveedor varchar, params numeric, total numeric, imagen varchar, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
 
 
 //roles
