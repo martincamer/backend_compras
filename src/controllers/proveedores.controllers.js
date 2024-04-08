@@ -1,5 +1,4 @@
 import { pool } from "../db.js";
-import cloudinary from "cloudinary";
 
 export const getProveedores = async (req, res, next) => {
   try {
@@ -141,25 +140,21 @@ export const actualizarProveedorCompra = async (req, res) => {
   }
 };
 
-// cloudinaryConfig.js
-// const cloudinary = require("cloudinary").v2;
-
-cloudinary.config({
-  cloud_name: "de4aqqalo",
-  api_key: "357786587771579",
-  api_secret: "Z5Y_dGc6o-cX7IK4OtoN0TI0FEM",
-  secure: true,
-});
-
 export const agregarComprobante = async (req, res, next) => {
-  const { proveedor, params, total, imageUrl } = req.body; // Se espera que imageUrl contenga la URL de la imagen
+  const { proveedor, params, total, imagen } = req.body;
 
   try {
     // Insertar el comprobante en la base de datos con la URL de la imagen
     const result = await pool.query(
       "INSERT INTO comprobantes (proveedor, params, total, imagen) VALUES ($1, $2, $3, $4) RETURNING *",
-      [proveedor, params, total, imageUrl]
+      [proveedor, params, total, imagen]
     );
+
+    // Restar el total del comprobante del total del proveedor
+    await pool.query("UPDATE proveedor SET total = total - $1 WHERE id = $2", [
+      total,
+      params,
+    ]);
 
     res.json(result.rows[0]);
   } catch (error) {
@@ -169,5 +164,36 @@ export const agregarComprobante = async (req, res, next) => {
       });
     }
     next(error);
+  }
+};
+
+// export const getComprobantes = async (req, res, next) => {
+//   try {
+//     const result = await pool.query("SELECT * FROM comprobantes");
+//     return res.json(result.rows);
+//   } catch (error) {
+//     console.error("Error al obtener proveedores:", error);
+//     return res.status(500).json({ message: "Error interno del servidor" });
+//   }
+// };
+
+export const getComprobantes = async (req, res, next) => {
+  const { params } = req.query;
+
+  try {
+    let query = "SELECT * FROM comprobantes";
+
+    // Si se proporciona el parámetro "params", agregar filtro a la consulta
+    if (params) {
+      query += " WHERE params = $1";
+      const result = await pool.query(query, [params]);
+      return res.json(result.rows);
+    } else {
+      const result = await pool.query(query);
+      return res.json(result.rows);
+    }
+  } catch (error) {
+    console.error("Error al obtener comprobantes:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
   }
 };

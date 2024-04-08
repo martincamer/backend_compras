@@ -8,6 +8,7 @@ import {
   getProveedor,
   getProveedores,
   agregarComprobante,
+  getComprobantes,
 } from "../controllers/proveedores.controllers.js";
 import { isAdmin } from "../middlewares/compras.middleware.js";
 
@@ -26,5 +27,7 @@ router.put("/actualizar-proveedor-compra", isAuth, actualizarProveedorCompra);
 router.delete("/eliminar-proveedor/:id", isAuth, isAdmin, eliminarProveedor);
 
 router.post("/crear-comprobante", agregarComprobante);
+
+router.get("/comprobantes", getComprobantes);
 
 export default router;
