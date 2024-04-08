@@ -174,7 +174,8 @@ export const agregarComprobante = async (req, res, next) => {
   const { proveedor, params, total } = req.body;
 
   try {
-    multerUploads(req, res, async function (err) {
+    // Manejar la subida de archivos con multer directamente
+    upload.single("imagen")(req, res, async function (err) {
       if (err instanceof multer.MulterError) {
         return res.status(400).json({ message: err.message });
       } else if (err) {
