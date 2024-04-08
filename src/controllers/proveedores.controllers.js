@@ -1,4 +1,7 @@
 import { pool } from "../db.js";
+import cloudinary from "../config/cloudinary.js";
+import multerUploads from "../config/multerConfig.js";
+import multer from "multer";
 
 export const getProveedores = async (req, res, next) => {
   try {
@@ -140,23 +143,63 @@ export const actualizarProveedorCompra = async (req, res) => {
   }
 };
 
+// export const agregarComprobante = async (req, res, next) => {
+//   const { proveedor, params, total, imagen } = req.body;
+
+//   try {
+//     // Insertar el comprobante en la base de datos con la URL de la imagen
+//     const result = await pool.query(
+//       "INSERT INTO comprobantes (proveedor, params, total, imagen) VALUES ($1, $2, $3, $4) RETURNING *",
+//       [proveedor, params, total, imagen]
+//     );
+
+//     // Restar el total del comprobante del total del proveedor
+//     await pool.query("UPDATE proveedor SET total = total - $1 WHERE id = $2", [
+//       total,
+//       params,
+//     ]);
+
+//     res.json(result.rows[0]);
+//   } catch (error) {
+//     if (error.code === "23505") {
+//       return res.status(409).json({
+//         message: "Ya existe un proveedor con ese nombre",
+//       });
+//     }
+//     next(error);
+//   }
+// };
+
 export const agregarComprobante = async (req, res, next) => {
-  const { proveedor, params, total, imagen } = req.body;
+  const { proveedor, params, total } = req.body;
 
   try {
-    // Insertar el comprobante en la base de datos con la URL de la imagen
-    const result = await pool.query(
-      "INSERT INTO comprobantes (proveedor, params, total, imagen) VALUES ($1, $2, $3, $4) RETURNING *",
-      [proveedor, params, total, imagen]
-    );
+    multerUploads(req, res, async function (err) {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ message: err.message });
+      } else if (err) {
+        return res.status(500).json({ message: err.message });
+      }
 
-    // Restar el total del comprobante del total del proveedor
-    await pool.query("UPDATE proveedor SET total = total - $1 WHERE id = $2", [
-      total,
-      params,
-    ]);
+      // Subir imagen a Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.buffer, {
+        folder: "comprobantes", // Opcional: carpeta en Cloudinary
+      });
 
-    res.json(result.rows[0]);
+      // Insertar el comprobante en la base de datos con la URL de la imagen
+      const queryResult = await pool.query(
+        "INSERT INTO comprobantes (proveedor, params, total, imagen) VALUES ($1, $2, $3, $4) RETURNING *",
+        [proveedor, params, total, result.secure_url]
+      );
+
+      // Restar el total del comprobante del total del proveedor
+      await pool.query(
+        "UPDATE proveedor SET total = total - $1 WHERE id = $2",
+        [total, params]
+      );
+
+      res.json(queryResult.rows[0]);
+    });
   } catch (error) {
     if (error.code === "23505") {
       return res.status(409).json({
