@@ -79,6 +79,11 @@ io.on("connection", (socket) => {
     console.log("Nuevo categoria:", datosSalida);
     io.emit("nuevo-proveedor", datosSalida); // Esto emitirá el evento "nueva-salida" a todos los clientes conectados
   });
+
+  socket.on("editar-proveedor", (datosSalida) => {
+    console.log("Nuevo categoria:", datosSalida);
+    io.emit("editar-proveedor", datosSalida); // Esto emitirá el evento "nueva-salida" a todos los clientes conectados
+  });
 });
 
 httpServer.listen(PORT, () => {

@@ -177,6 +177,19 @@ export const agregarComprobante = async (req, res, next) => {
 //   }
 // };
 
+// export const getOrdenesMensual = async (req, res, next) => {
+//   try {
+//     const result = await pool.query(
+//       "SELECT * FROM compriba WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)"
+//     );
+
+//     return res.json(result.rows);
+//   } catch (error) {
+//     console.error("Error al obtener remuneracion:", error);
+//     return res.status(500).json({ message: "Error interno del servidor" });
+//   }
+// };
+
 export const getComprobantes = async (req, res, next) => {
   const { params } = req.query;
 
