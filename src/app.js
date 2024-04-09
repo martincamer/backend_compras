@@ -14,13 +14,13 @@ import multer from "multer";
 
 const app = express();
 
-const upload = multer({ dest: "uploads/" }); // Configura multer con el destino adecuado
+// const upload = multer({ dest: "comprobantes/" }); // Configura multer con el destino adecuado
 
-// Ruta para manejar la subida de archivos
-app.post("/upload", upload.single("imagen"), (req, res) => {
-  // El archivo subido estará disponible en req.file
-  console.log(req.file);
-});
+// // Ruta para manejar la subida de archivos
+// app.post("/comprobantes", upload.single("imagen"), (req, res) => {
+//   // El archivo subido estará disponible en req.file
+//   console.log(req.file);
+// });
 
 // Middlewares
 app.use(

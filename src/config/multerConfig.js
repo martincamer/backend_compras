@@ -1,7 +1,10 @@
 import multer from "multer";
 
+// Configurar el almacenamiento en memoria
 const storage = multer.memoryStorage();
 
-const multerUploads = multer({ storage }).single("imagen");
+// Configurar Multer con las opciones de almacenamiento
+const upload = multer({ storage });
 
-export default multerUploads;
+// Exportar el middleware de subida de archivos
+export default upload;
