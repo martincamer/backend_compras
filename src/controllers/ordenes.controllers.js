@@ -64,6 +64,342 @@ export const crearOrden = async (req, res, next) => {
   }
 };
 
+export const obtenerProductoOrden = async (req, res, next) => {
+  const { idOrden, idProducto } = req.params; // Suponiendo que estás pasando los IDs como parámetros en la URL
+
+  try {
+    // Obtener la orden de la base de datos
+    const orden = await pool.query("SELECT datos FROM orden WHERE id = $1", [
+      idOrden,
+    ]);
+
+    // Verificar si se encontró la orden
+    if (orden.rows.length === 0) {
+      return res.status(404).json({
+        message: "No se encontró la orden con el ID proporcionado",
+      });
+    }
+
+    // Parsear la columna datos para obtener el arreglo de productos
+    const productosOrden = orden.rows[0].datos.productoSeleccionado;
+
+    // Filtrar el arreglo de productos para encontrar el producto deseado por su ID
+    const productoDeseado = productosOrden.find(
+      (producto) => parseInt(producto.id) === parseInt(idProducto)
+    );
+
+    // Verificar si se encontró el producto
+    if (!productoDeseado) {
+      return res.status(404).json({
+        message:
+          "No se encontró el producto con el ID proporcionado en la orden",
+      });
+    }
+
+    // Si se encuentra el producto, devolverlo en la respuesta
+    res.json(productoDeseado);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// // Controlador para editar un producto específico de una orden
+// export const editarProductoOrden = async (req, res, next) => {
+//   const { idOrden, idProducto } = req.params; // IDs de la orden y el producto
+//   const { detalle, categoria, precio_und, cantidad, totalFinal } = req.body; // Nuevos detalles del producto
+
+//   try {
+//     // Obtener la orden de la base de datos
+//     const orden = await pool.query("SELECT datos FROM orden WHERE id = $1", [
+//       idOrden,
+//     ]);
+
+//     // Verificar si se encontró la orden
+//     if (orden.rows.length === 0) {
+//       return res.status(404).json({
+//         message: "No se encontró la orden con el ID proporcionado",
+//       });
+//     }
+
+//     // Parsear la columna datos para obtener el arreglo de productos
+//     let productosOrden = orden.rows[0].datos.productoSeleccionado;
+
+//     // Encontrar el índice del producto a editar en el arreglo de productos
+//     const indexProducto = productosOrden.findIndex(
+//       (producto) => producto.id === parseInt(idProducto)
+//     );
+
+//     // Verificar si se encontró el producto
+//     if (indexProducto === -1) {
+//       return res.status(404).json({
+//         message:
+//           "No se encontró el producto con el ID proporcionado en la orden",
+//       });
+//     }
+
+//     // Actualizar los detalles del producto en el arreglo de productos
+//     productosOrden[indexProducto] = {
+//       ...productosOrden[indexProducto],
+//       detalle,
+//       categoria,
+//       precio_und,
+//       cantidad,
+//       totalFinal,
+//     };
+
+//     // Actualizar la columna datos en la base de datos con el arreglo de productos actualizado
+//     await pool.query("UPDATE orden SET datos = $1 WHERE id = $2", [
+//       JSON.stringify({ productoSeleccionado: productosOrden }),
+//       idOrden,
+//     ]);
+
+//     res.json({ message: "Producto actualizado correctamente" });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+// export const editarProductoOrden = async (req, res, next) => {
+//   const { idOrden, idProducto } = req.params; // IDs de la orden y el producto
+//   const { detalle, categoria, precio_und, cantidad, totalFinal } = req.body; // Nuevos detalles del producto
+
+//   try {
+//     // Obtener la orden de la base de datos
+//     const ordenQuery = await pool.query(
+//       "SELECT datos, precio_final FROM orden WHERE id = $1",
+//       [idOrden]
+//     );
+
+//     // Verificar si se encontró la orden
+//     if (ordenQuery.rows.length === 0) {
+//       return res.status(404).json({
+//         message: "No se encontró la orden con el ID proporcionado",
+//       });
+//     }
+
+//     const orden = ordenQuery.rows[0];
+//     let productosOrden = orden.datos.productoSeleccionado;
+
+//     // Encontrar el índice del producto a editar en el arreglo de productos
+//     const indexProducto = productosOrden.findIndex(
+//       (producto) => producto.id === parseInt(idProducto)
+//     );
+
+//     // Verificar si se encontró el producto
+//     if (indexProducto === -1) {
+//       return res.status(404).json({
+//         message:
+//           "No se encontró el producto con el ID proporcionado en la orden",
+//       });
+//     }
+
+//     // Obtener el precio final anterior del producto
+//     const precioFinalAnterior = productosOrden[indexProducto].totalFinal;
+
+//     // Actualizar los detalles del producto en el arreglo de productos
+//     productosOrden[indexProducto] = {
+//       ...productosOrden[indexProducto],
+//       detalle,
+//       categoria,
+//       precio_und,
+//       cantidad,
+//       totalFinal,
+//     };
+
+//     // Calcular el cambio en el precio final de la orden
+//     const cambioPrecioFinal = orden.precio_final - precioFinalAnterior;
+
+//     // Actualizar el precio final de la orden en la base de datos
+//     const nuevoPrecioFinal = cambioPrecioFinal + cambioPrecioFinal;
+
+//     await pool.query(
+//       "UPDATE orden SET datos = $1, precio_final = $2 WHERE id = $3",
+//       [
+//         JSON.stringify({ productoSeleccionado: productosOrden }),
+//         nuevoPrecioFinal,
+//         idOrden,
+//       ]
+//     );
+
+//     res.json({ message: "Producto actualizado correctamente" });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+export const editarProductoOrden = async (req, res, next) => {
+  const { idOrden, idProducto } = req.params; // IDs de la orden y el producto
+  const { detalle, categoria, precio_und, cantidad, totalFinal } = req.body; // Nuevos detalles del producto
+
+  try {
+    // Obtener la orden de la base de datos
+    const ordenQuery = await pool.query(
+      "SELECT datos, precio_final, proveedor FROM orden WHERE id = $1",
+      [idOrden]
+    );
+
+    // Verificar si se encontró la orden
+    if (ordenQuery.rows.length === 0) {
+      return res.status(404).json({
+        message: "No se encontró la orden con el ID proporcionado",
+      });
+    }
+
+    const orden = ordenQuery.rows[0];
+
+    console.log(orden);
+    let productosOrden = orden.datos.productoSeleccionado;
+
+    // Encontrar el índice del producto a editar en el arreglo de productos
+    const indexProducto = productosOrden.findIndex(
+      (producto) => producto.id === parseInt(idProducto)
+    );
+
+    // Verificar si se encontró el producto
+    if (indexProducto === -1) {
+      return res.status(404).json({
+        message:
+          "No se encontró el producto con el ID proporcionado en la orden",
+      });
+    }
+
+    // Obtener el precio final anterior del producto
+    const precioFinalAnterior = productosOrden[indexProducto].totalFinal;
+
+    // Actualizar los detalles del producto en el arreglo de productos
+    productosOrden[indexProducto] = {
+      ...productosOrden[indexProducto],
+      detalle,
+      categoria,
+      precio_und,
+      cantidad,
+      totalFinal,
+    };
+
+    // Calcular el cambio en el precio final de la orden
+    const cambioPrecioFinal =
+      orden.precio_final - precioFinalAnterior + totalFinal;
+
+    // Actualizar el precio final de la orden en la base de datos
+    const nuevoPrecioFinal = cambioPrecioFinal;
+
+    // Obtener el proveedor de la orden
+    const { proveedor } = orden;
+
+    // Obtener el total actual del proveedor
+    const proveedorQuery = await pool.query(
+      "SELECT total FROM proveedor WHERE proveedor = $1",
+      [proveedor]
+    );
+
+    if (proveedorQuery.rows.length === 0) {
+      return res.status(404).json({
+        message: "No se encontró el proveedor asociado a la orden",
+      });
+    }
+
+    const proveedorEnviado = proveedorQuery.rows[0];
+    const totalProveedorAnterior = proveedorEnviado.total;
+
+    // Calcular el nuevo total del proveedor
+    const nuevoTotalProveedor =
+      totalProveedorAnterior - precioFinalAnterior + totalFinal;
+
+    // Actualizar el total del proveedor en la base de datos
+    await pool.query("UPDATE proveedor SET total = $1 WHERE proveedor = $2", [
+      nuevoTotalProveedor,
+      proveedor,
+    ]);
+
+    // Actualizar la orden en la base de datos
+    await pool.query(
+      "UPDATE orden SET datos = $1, precio_final = $2 WHERE id = $3",
+      [
+        JSON.stringify({ productoSeleccionado: productosOrden }),
+        nuevoPrecioFinal,
+        idOrden,
+      ]
+    );
+
+    res.json({ message: "Producto actualizado correctamente" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const eliminarProductoOrden = async (req, res, next) => {
+  const { idOrden, idProducto } = req.params; // IDs de la orden y el producto
+
+  try {
+    // Obtener la orden de la base de datos
+    const ordenQuery = await pool.query(
+      "SELECT datos, precio_final, proveedor FROM orden WHERE id = $1",
+      [idOrden]
+    );
+
+    // Verificar si se encontró la orden
+    if (ordenQuery.rows.length === 0) {
+      return res.status(404).json({
+        message: "No se encontró la orden con el ID proporcionado",
+      });
+    }
+
+    const orden = ordenQuery.rows[0];
+
+    // Obtener el proveedor de la orden
+    const { proveedor } = orden;
+
+    // Obtener el producto a eliminar de la orden
+    const productosOrden = orden.datos.productoSeleccionado;
+    const productoAEliminar = productosOrden.find(
+      (producto) => producto.id === parseInt(idProducto)
+    );
+
+    // Verificar si se encontró el producto
+    if (!productoAEliminar) {
+      return res.status(404).json({
+        message:
+          "No se encontró el producto con el ID proporcionado en la orden",
+      });
+    }
+
+    // Obtener el precio final anterior del producto
+    const precioFinalAnterior = productoAEliminar.totalFinal;
+
+    // Calcular el cambio en el precio final de la orden
+    const cambioPrecioFinal = orden.precio_final - precioFinalAnterior;
+
+    // Calcular el cambio en el total del proveedor
+    const cambioTotalProveedor = -precioFinalAnterior;
+
+    // Actualizar el total del proveedor en la base de datos
+    await pool.query(
+      "UPDATE proveedor SET total = total + $1 WHERE proveedor = $2",
+      [cambioTotalProveedor, proveedor]
+    );
+
+    // Actualizar el precio final de la orden en la base de datos
+    await pool.query(
+      "UPDATE orden SET precio_final = precio_final + $1 WHERE id = $2",
+      [cambioPrecioFinal, idOrden]
+    );
+
+    // Eliminar el producto de la orden en la base de datos
+    await pool.query("UPDATE orden SET datos = $1 WHERE id = $2", [
+      JSON.stringify({
+        productoSeleccionado: productosOrden.filter(
+          (producto) => producto.id !== parseInt(idProducto)
+        ),
+      }),
+      idOrden,
+    ]);
+
+    res.json({ message: "Producto eliminado correctamente" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const actualizarOrden = async (req, res) => {
   const id = req.params.id;
 

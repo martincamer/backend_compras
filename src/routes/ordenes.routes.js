@@ -4,12 +4,15 @@ import { isAdmin } from "../middlewares/compras.middleware.js";
 import {
   actualizarOrden,
   crearOrden,
+  editarProductoOrden,
   editarProductoUnico,
   eliminarOrden,
+  eliminarProductoOrden,
   getOrden,
   getOrdenes,
   getOrdenesMensual,
   getOrdenesPorRangoDeFechas,
+  obtenerProductoOrden,
   obtenerValorUnico,
 } from "../controllers/ordenes.controllers.js";
 
@@ -30,6 +33,12 @@ router.post("/crear-orden-nueva", isAuth, isAdmin, crearOrden);
 router.get("/orden-unico/:id", isAuth, isAdmin, obtenerValorUnico);
 
 router.put("/editar-producto-orden/:id", isAuth, isAdmin, editarProductoUnico);
+
+router.get("/orden/:idOrden/producto/:idProducto", obtenerProductoOrden);
+
+router.put("/orden/:idOrden/producto/:idProducto", editarProductoOrden);
+
+router.delete("/orden/:idOrden/producto/:idProducto", eliminarProductoOrden);
 
 router.post(
   "/ordenes-rango-fechas",

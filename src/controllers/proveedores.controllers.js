@@ -33,18 +33,15 @@ export const getProveedor = async (req, res) => {
 };
 
 export const crearProveedor = async (req, res, next) => {
-  const { proveedor, total } = req.body;
+  const { proveedor, total, localidad, provincia } = req.body;
 
   try {
     // Verifica si total está definido, de lo contrario, asigna un valor vacío
     const totalValue = total !== undefined ? total : 0;
 
-    // Crea un objeto vacío para el campo comprobantes
-    const comprobantesValue = {};
-
     const result = await pool.query(
-      "INSERT INTO proveedor (proveedor, total, comprobantes) VALUES ($1, $2, $3) RETURNING *",
-      [proveedor, totalValue, comprobantesValue]
+      "INSERT INTO proveedor (proveedor, total,localidad, provincia) VALUES ($1, $2, $3, $4) RETURNING *",
+      [proveedor, totalValue, localidad, provincia]
     );
 
     res.json(result.rows[0]);
@@ -61,12 +58,12 @@ export const crearProveedor = async (req, res, next) => {
 export const actualizarProveedor = async (req, res) => {
   const id = req.params.id;
 
-  const { proveedor, total, comprobantes } = req.body;
+  const { proveedor, total } = req.body;
 
   try {
     const result = await pool.query(
-      "UPDATE proveedor SET proveedor = $1, total = $2, comprobantes = $3 WHERE id = $4",
-      [proveedor, total, comprobantes, id]
+      "UPDATE proveedor SET proveedor = $1, total = $2 WHERE id = $3",
+      [proveedor, total, id]
     );
 
     if (result.rowCount === 0) {
@@ -143,50 +140,10 @@ export const actualizarProveedorCompra = async (req, res) => {
   }
 };
 
-// export const agregarComprobante = async (req, res, next) => {
-//   const { proveedor, params, total, imagen } = req.body;
-
-//   try {
-//     // Insertar el comprobante en la base de datos con la URL de la imagen
-//     const result = await pool.query(
-//       "INSERT INTO comprobantes (proveedor, params, total, imagen) VALUES ($1, $2, $3, $4) RETURNING *",
-//       [proveedor, params, total, imagen]
-//     );
-
-//     // Restar el total del comprobante del total del proveedor
-//     await pool.query("UPDATE proveedor SET total = total - $1 WHERE id = $2", [
-//       total,
-//       params,
-//     ]);
-
-//     res.json(result.rows[0]);
-//   } catch (error) {
-//     if (error.code === "23505") {
-//       return res.status(409).json({
-//         message: "Ya existe un proveedor con ese nombre",
-//       });
-//     }
-//     next(error);
-//   }
-// };
-
 export const agregarComprobante = async (req, res, next) => {
   const { proveedor, params, total, imagen } = req.body;
 
   try {
-    // // Manejar la subida de archivos con multer directamente
-    // upload.single("imagen")(req, res, async function (err) {
-    //   if (err instanceof multer.MulterError) {
-    //     return res.status(400).json({ message: err.message });
-    //   } else if (err) {
-    //     return res.status(500).json({ message: err.message });
-    //   }
-
-    //   // Subir imagen a Cloudinary
-    //   const result = await cloudinary?.uploader?.upload(req.file.buffer, {
-    //     folder: "comprobantes", // Opcional: carpeta en Cloudinary
-    //   });
-
     // Insertar el comprobante en la base de datos con la URL de la imagen
     const queryResult = await pool.query(
       "INSERT INTO comprobantes (proveedor, params, total, imagen) VALUES ($1, $2, $3, $4) RETURNING *",
