@@ -2,7 +2,6 @@ import Router from "express-promise-router";
 import { isAuth } from "../middlewares/auth.middleware.js";
 import { isAdmin } from "../middlewares/compras.middleware.js";
 import {
-  actualizarOrden,
   crearOrden,
   editarProductoOrden,
   editarProductoUnico,
@@ -12,6 +11,7 @@ import {
   getOrdenes,
   getOrdenesMensual,
   getOrdenesPorRangoDeFechas,
+  guardarOrden,
   obtenerProductoOrden,
   obtenerValorUnico,
 } from "../controllers/ordenes.controllers.js";
@@ -24,7 +24,7 @@ router.get("/ordenes-mensuales", isAuth, isAdmin, getOrdenesMensual);
 
 router.get("/orden/:id", isAuth, isAdmin, getOrden);
 
-router.put("/editar-orden/:id", isAuth, isAdmin, actualizarOrden);
+router.put("/editar-orden/:id", isAuth, isAdmin, guardarOrden);
 
 router.delete("/eliminar-orden/:id", isAuth, isAdmin, eliminarOrden);
 

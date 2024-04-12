@@ -29,6 +29,7 @@ export const crearOrden = async (req, res, next) => {
     localidad,
     provincia,
     datos,
+    iva,
   } = req.body;
 
   const { username, userRole } = req;
@@ -38,7 +39,7 @@ export const crearOrden = async (req, res, next) => {
     const precio_final_string = JSON.stringify(precio_final);
 
     const result = await pool.query(
-      "INSERT INTO orden (proveedor,numero_factura,detalle,fecha_factura,precio_final,localidad,provincia,datos,usuario,role_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *",
+      "INSERT INTO orden (proveedor,numero_factura,detalle,fecha_factura,precio_final,localidad,provincia,datos,iva,usuario,role_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
       [
         proveedor,
         numero_factura,
@@ -48,9 +49,155 @@ export const crearOrden = async (req, res, next) => {
         localidad,
         provincia,
         datos,
+        iva,
         username,
         userRole,
       ]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    if (error.code === "23505") {
+      return res.status(409).json({
+        message: "Ya existe una orden con ese id",
+      });
+    }
+    next(error);
+  }
+};
+
+// export const guardarOrden = async (req, res, next) => {
+//   // Function logic remains the same
+//   const {
+//     id,
+//     proveedor,
+//     numero_factura,
+//     detalle,
+//     fecha_factura,
+//     precio_final,
+//     localidad,
+//     provincia,
+//     datos,
+//     iva,
+//   } = req.body;
+
+//   const { username, userRole } = req;
+
+//   try {
+//     // Convert the precio_final array into a string or JSON before inserting it into the database
+//     const precio_final_string = JSON.stringify(precio_final);
+
+//     let result;
+
+//     if (id) {
+//       // If an ID is provided, update the existing order
+//       result = await pool.query(
+//         "UPDATE orden SET proveedor=$1, numero_factura=$2, detalle=$3, fecha_factura=$4, precio_final=$5, localidad=$6, provincia=$7, datos=$8, iva=$9, usuario=$10, role_id=$11 WHERE id=$12 RETURNING *",
+//         [
+//           proveedor,
+//           numero_factura,
+//           detalle,
+//           fecha_factura,
+//           precio_final_string, // Use the converted string instead of the array directly
+//           localidad,
+//           provincia,
+//           datos,
+//           iva,
+//           username,
+//           userRole,
+//           id,
+//         ]
+//       );
+//     } else {
+//       // If no ID is provided, insert a new order
+//       result = await pool.query(
+//         "INSERT INTO orden (proveedor,numero_factura,detalle,fecha_factura,precio_final,localidad,provincia,datos,iva,usuario,role_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
+//         [
+//           proveedor,
+//           numero_factura,
+//           detalle,
+//           fecha_factura,
+//           precio_final_string, // Use the converted string instead of the array directly
+//           localidad,
+//           provincia,
+//           datos,
+//           iva,
+//           username,
+//           userRole,
+//         ]
+//       );
+//     }
+
+//     res.json(result.rows[0]);
+//   } catch (error) {
+//     if (error.code === "23505") {
+//       return res.status(409).json({
+//         message: "Ya existe una orden con ese id",
+//       });
+//     }
+//     next(error);
+//   }
+// };
+
+export const guardarOrden = async (req, res, next) => {
+  const { id } = req.params; // IDs de la orden y el producto
+  const {
+    proveedor,
+    numero_factura,
+    detalle,
+    fecha_factura,
+    precio_final,
+    localidad,
+    provincia,
+    datos,
+    iva,
+  } = req.body;
+
+  const { username, userRole } = req;
+
+  try {
+    // Retrieve the previous precio_final from the database
+    const previousOrder = await pool.query(
+      "SELECT precio_final FROM orden WHERE id = $1",
+      [id]
+    );
+
+    if (previousOrder.rows.length === 0) {
+      // Si no se encuentra una orden con el ID proporcionado, devolver un error
+      return res.status(404).json({ message: "La orden no existe" });
+    }
+
+    const previousPrecioFinal = previousOrder.rows[0].precio_final;
+
+    // Convert the precio_final array into a string or JSON before inserting it into the database
+    const precio_final_string = JSON.stringify(precio_final);
+
+    // Actualizar la orden existente
+    const result = await pool.query(
+      "UPDATE orden SET proveedor=$1, numero_factura=$2, detalle=$3, fecha_factura=$4, precio_final=$5, localidad=$6, provincia=$7, datos=$8, iva=$9, usuario=$10, role_id=$11 WHERE id=$12 RETURNING *",
+      [
+        proveedor,
+        numero_factura,
+        detalle,
+        fecha_factura,
+        precio_final_string, // Use the converted string instead of the array directly
+        localidad,
+        provincia,
+        datos,
+        iva,
+        username,
+        userRole,
+        id,
+      ]
+    );
+
+    // Calcular la diferencia en precio_final
+    // const precio_final_diff = precio_final - previousPrecioFinal;
+
+    // Actualizar el total en la tabla proveedor para el proveedor asociado
+    await pool.query(
+      "UPDATE proveedor SET total = total - $1 + $2 WHERE proveedor = $3",
+      [previousPrecioFinal, precio_final, proveedor]
     );
 
     res.json(result.rows[0]);
