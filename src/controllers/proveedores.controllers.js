@@ -36,7 +36,7 @@ export const crearProveedor = async (req, res, next) => {
   const { proveedor, total, localidad, provincia } = req.body;
 
   try {
-    // Verifica si total está definido, de lo contrario, asigna un valor vacío
+    // Verifica si total está definido, de lo contrario, asigna un valor vacío//
     const totalValue = total !== undefined ? total : 0;
 
     const result = await pool.query(
