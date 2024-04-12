@@ -18,9 +18,9 @@ import {
 
 const router = Router();
 
-router.get("/ordenes", isAuth, isAdmin, getOrdenes);
+router.get("/ordenes", isAuth, getOrdenes);
 
-router.get("/ordenes-mensuales", isAuth, isAdmin, getOrdenesMensual);
+router.get("/ordenes-mensuales", isAuth, getOrdenesMensual);
 
 router.get("/orden/:id", isAuth, isAdmin, getOrden);
 
