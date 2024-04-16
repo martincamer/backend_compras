@@ -13,6 +13,7 @@ import {
   actualizarCategorias,
   getCategoria,
   eliminarCategoria,
+  actualizarPrecioProducto,
 } from "../controllers/productos.controllers.js";
 import { isAdmin } from "../middlewares/compras.middleware.js";
 
@@ -44,6 +45,20 @@ router.get("/producto/:id", isAuth, isAdmin, getProducto);
 router.post("/crear-producto", isAuth, isAdmin, crearProducto);
 
 router.put("/editar-producto/:id", isAuth, isAdmin, actualizarProducto);
+
+router.put(
+  "/editar-producto/precio/:id",
+  isAuth,
+  isAdmin,
+  actualizarPrecioProducto
+);
+
+router.put(
+  "/editar-producto/precio-detalle/:detalle",
+  isAuth,
+  isAdmin,
+  actualizarPrecioProducto
+);
 
 router.delete("/eliminar-producto/:id", isAuth, isAdmin, eliminarProducto);
 

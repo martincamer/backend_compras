@@ -64,6 +64,43 @@ export const actualizarProducto = async (req, res) => {
   });
 };
 
+export const actualizarPrecioProducto = async (req, res) => {
+  let result;
+  const { id, detalle } = req.params;
+  const { precio_und } = req.body;
+
+  console.log(detalle);
+
+  if (id) {
+    // Actualizar precio por ID
+    result = await pool.query(
+      "UPDATE producto SET precio_und = $1 WHERE id = $2",
+      [precio_und, id]
+    );
+  } else if (detalle) {
+    // Actualizar precio por detalle
+    result = await pool.query(
+      "UPDATE producto SET precio_und = $1 WHERE detalle = $2",
+      [precio_und, detalle]
+    );
+  } else {
+    return res.status(400).json({
+      message:
+        "Se requiere un ID o un detalle para actualizar el precio del producto",
+    });
+  }
+
+  if (result.rowCount === 0) {
+    return res.status(404).json({
+      message: "No se encontró ningún producto para actualizar el precio",
+    });
+  }
+
+  return res.json({
+    message: "Precio del producto actualizado",
+  });
+};
+
 export const eliminarProducto = async (req, res) => {
   const result = await pool.query("DELETE FROM producto WHERE id = $1", [
     req.params.id,
