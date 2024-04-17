@@ -81,6 +81,32 @@ export const actualizarProveedor = async (req, res) => {
   }
 };
 
+export const actualizarTotalProveedor = async (req, res) => {
+  const id = req.params.id;
+
+  const { total } = req.body;
+
+  try {
+    const result = await pool.query(
+      "UPDATE proveedor SET total = $1 WHERE id = $2",
+      [total, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        message: "No existe un proveedor con ese id",
+      });
+    }
+
+    return res.json({
+      message: "Total del proveedor actualizado",
+    });
+  } catch (error) {
+    console.error("Error al actualizar el total del proveedor:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
 export const eliminarProveedor = async (req, res) => {
   const result = await pool.query("DELETE FROM proveedor WHERE id = $1", [
     req.params.id,

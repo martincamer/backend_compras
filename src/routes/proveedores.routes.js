@@ -10,6 +10,7 @@ import {
   agregarComprobante,
   getComprobantes,
   getComprobante,
+  actualizarTotalProveedor,
 } from "../controllers/proveedores.controllers.js";
 import { isAdmin } from "../middlewares/compras.middleware.js";
 
@@ -32,5 +33,7 @@ router.post("/crear-comprobante", agregarComprobante);
 router.get("/comprobantes", getComprobantes);
 
 router.get("/comprobantes/:id", isAuth, isAdmin, getComprobante);
+
+router.put("/proveedores/:id/total", actualizarTotalProveedor);
 
 export default router;
