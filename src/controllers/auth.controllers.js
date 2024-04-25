@@ -101,7 +101,7 @@ export const signupTwo = async (req, res, next) => {
 
 //logout
 export const signout = (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie("token", { httpOnly: true, secure: true, sameSite: "none" });
   res.sendStatus(200);
 };
 
