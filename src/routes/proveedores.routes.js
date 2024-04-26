@@ -11,6 +11,7 @@ import {
   getComprobantes,
   getComprobante,
   actualizarTotalProveedor,
+  getComprobantesMensual,
 } from "../controllers/proveedores.controllers.js";
 import { isAdmin } from "../middlewares/compras.middleware.js";
 
@@ -31,6 +32,8 @@ router.delete("/eliminar-proveedor/:id", isAuth, isAdmin, eliminarProveedor);
 router.post("/crear-comprobante", agregarComprobante);
 
 router.get("/comprobantes", getComprobantes);
+
+router.get("/comprobantes-mes", getComprobantesMensual);
 
 router.get("/comprobantes/:id", isAuth, isAdmin, getComprobante);
 

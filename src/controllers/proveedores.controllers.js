@@ -194,29 +194,6 @@ export const agregarComprobante = async (req, res, next) => {
   }
 };
 
-// export const getComprobantes = async (req, res, next) => {
-//   try {
-//     const result = await pool.query("SELECT * FROM comprobantes");
-//     return res.json(result.rows);
-//   } catch (error) {
-//     console.error("Error al obtener proveedores:", error);
-//     return res.status(500).json({ message: "Error interno del servidor" });
-//   }
-// };
-
-// export const getOrdenesMensual = async (req, res, next) => {
-//   try {
-//     const result = await pool.query(
-//       "SELECT * FROM compriba WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)"
-//     );
-
-//     return res.json(result.rows);
-//   } catch (error) {
-//     console.error("Error al obtener remuneracion:", error);
-//     return res.status(500).json({ message: "Error interno del servidor" });
-//   }
-// };
-
 export const getComprobantes = async (req, res, next) => {
   const { params } = req.query;
 
@@ -254,6 +231,19 @@ export const getComprobante = async (req, res) => {
     return res.json(result.rows[0]);
   } catch (error) {
     console.error("Error al obtener comprobantes:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+export const getComprobantesMensual = async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM comprobantes WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)"
+    );
+
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener remuneracion:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
   }
 };
