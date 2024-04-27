@@ -2,6 +2,62 @@ import { pool } from "../db.js";
 import { createAccessToken } from "../libs/jwt.js";
 import bcrypts from "bcryptjs";
 
+export const updateUserPassword = async (req, res) => {
+  const userId = req.params.id;
+  const { password } = req.body;
+
+  try {
+    // Verificar si el usuario existe
+    const userResult = await pool.query("SELECT * FROM users WHERE id = $1", [
+      userId,
+    ]);
+
+    if (userResult.rowCount === 0) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    const hashedPassword = await bcrypts.hash(password, 10);
+
+    // Actualizar los datos del usuario, incluyendo la contraseña hash
+    const updateResult = await pool.query(
+      "UPDATE users SET password = $1 WHERE id = $2 RETURNING *",
+      [hashedPassword, userId]
+    );
+
+    res.json(updateResult.rows[0]);
+  } catch (error) {
+    console.error("Error al actualizar usuario:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+export const updateUserRole = async (req, res) => {
+  const userId = req.params.id;
+  const { role_id } = req.body; // Asegúrate de que este campo está en el cuerpo de la solicitud
+
+  try {
+    // Verificar si el usuario existe
+    const userResult = await pool.query("SELECT * FROM users WHERE id = $1", [
+      userId,
+    ]);
+
+    if (userResult.rowCount === 0) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Actualizar solo el campo role_id
+    const updateResult = await pool.query(
+      "UPDATE users SET role_id = $1 WHERE id = $2 RETURNING *",
+      [role_id, userId]
+    );
+
+    res.json(updateResult.rows[0]);
+  } catch (error) {
+    console.error("Error al actualizar el rol del usuario:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
 // signin
 export const signin = async (req, res) => {
   const { email, password } = req.body;
