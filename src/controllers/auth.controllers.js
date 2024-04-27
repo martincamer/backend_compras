@@ -41,14 +41,14 @@ export const signin = async (req, res) => {
 
 // signup
 export const signup = async (req, res, next) => {
-  const { username, email, password } = req.body;
+  const { username, email, tipo, password, localidad, fabrica } = req.body;
 
   try {
     const hashedPassword = await bcrypts.hash(password, 10);
 
     const result = await pool.query(
-      "INSERT INTO users(username,password,email,role_id) VALUES($1,$2,$3,$4) RETURNING *",
-      [username, hashedPassword, email, 2] // Assuming 'user' role has an id of 2
+      "INSERT INTO users(username,password,tipo, email,localidad,fabrica, role_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
+      [username, hashedPassword, tipo, email, localidad, fabrica, 1] // Assuming 'user' role has an id of 2
     );
 
     const token = await createAccessToken({

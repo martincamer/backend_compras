@@ -10,7 +10,9 @@ import {
   getOrden,
   getOrdenes,
   getOrdenesMensual,
+  getOrdenesMensualAdmin,
   getOrdenesPorRangoDeFechas,
+  getOrdenesPorRangoDeFechasAdmin,
   guardarOrden,
   obtenerProductoOrden,
   obtenerValorUnico,
@@ -18,9 +20,11 @@ import {
 
 const router = Router();
 
-router.get("/ordenes", getOrdenes);
+router.get("/ordenes", isAuth, getOrdenes);
 
-router.get("/ordenes-mensuales", getOrdenesMensual);
+router.get("/ordenes-mensuales", isAuth, getOrdenesMensual);
+
+router.get("/ordenes-mensuales-admin", isAuth, getOrdenesMensualAdmin);
 
 router.get("/orden/:id", isAuth, isAdmin, getOrden);
 
@@ -45,6 +49,13 @@ router.post(
   isAuth,
   isAdmin,
   getOrdenesPorRangoDeFechas
+);
+
+router.post(
+  "/ordenes-rango-fechas-admin",
+  isAuth,
+  isAdmin,
+  getOrdenesPorRangoDeFechasAdmin
 );
 
 export default router;

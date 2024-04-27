@@ -1,7 +1,14 @@
 import { pool } from "../db.js";
 
+///////////////////ADMIN/////////////////////
+
+////////////////////////////////////////////
+
 export const getProductos = async (req, res, next) => {
-  const result = await pool.query("SELECT * FROM producto");
+  //obtener perfiles
+  const result = await pool.query("SELECT * FROM producto WHERE user_id = $1", [
+    req.userId,
+  ]);
   return res.json(result.rows);
 };
 
@@ -26,8 +33,8 @@ export const crearProducto = async (req, res, next) => {
 
   try {
     const result = await pool.query(
-      "INSERT INTO producto (detalle,categoria,precio_und,usuario, role_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [detalle, categoria, precio_und, username, userRole]
+      "INSERT INTO producto (detalle,categoria,precio_und,usuario, role_id, user_id) VALUES ($1, $2, $3, $4, $5,$6) RETURNING *",
+      [detalle, categoria, precio_und, username, userRole, req.userId]
     );
 
     res.json(result.rows[0]);
@@ -162,7 +169,11 @@ export const getProductosPorRangoDeFechas = async (req, res, next) => {
 };
 
 export const getCategorias = async (req, res, next) => {
-  const result = await pool.query("SELECT * FROM categorias");
+  //obtener perfiles
+  const result = await pool.query(
+    "SELECT * FROM categorias WHERE user_id = $1",
+    [req.userId]
+  );
   return res.json(result.rows);
 };
 
@@ -173,8 +184,8 @@ export const crearCategorias = async (req, res, next) => {
 
   try {
     const result = await pool.query(
-      "INSERT INTO categorias (detalle,usuario, role_id) VALUES ($1, $2, $3) RETURNING *",
-      [detalle, username, userRole]
+      "INSERT INTO categorias (detalle,usuario, role_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *",
+      [detalle, username, userRole, req.userId]
     );
 
     res.json(result.rows[0]);

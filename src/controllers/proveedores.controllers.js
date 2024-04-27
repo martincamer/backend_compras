@@ -1,9 +1,6 @@
 import { pool } from "../db.js";
-import cloudinary from "../config/cloudinary.js";
-import upload from "../config/multerConfig.js";
-import multer from "multer";
 
-export const getProveedores = async (req, res, next) => {
+export const getProveedoresAdmin = async (req, res, next) => {
   try {
     const result = await pool.query("SELECT * FROM proveedor");
     return res.json(result.rows);
@@ -11,6 +8,15 @@ export const getProveedores = async (req, res, next) => {
     console.error("Error al obtener proveedores:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
   }
+};
+
+export const getProveedores = async (req, res, next) => {
+  //obtener perfiles
+  const result = await pool.query(
+    "SELECT * FROM proveedor WHERE user_id = $1",
+    [req.userId]
+  );
+  return res.json(result.rows);
 };
 
 export const getProveedor = async (req, res) => {
@@ -40,8 +46,16 @@ export const crearProveedor = async (req, res, next) => {
     const totalValue = total !== undefined ? total : 0;
 
     const result = await pool.query(
-      "INSERT INTO proveedor (proveedor, total,localidad, provincia) VALUES ($1, $2, $3, $4) RETURNING *",
-      [proveedor, totalValue, localidad, provincia]
+      "INSERT INTO proveedor (proveedor, total,localidad, provincia, fabrica, localidad_usuario, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+      [
+        proveedor,
+        totalValue,
+        localidad,
+        provincia,
+        req.fabrica,
+        req.localidad,
+        req.userId,
+      ]
     );
 
     res.json(result.rows[0]);
@@ -172,8 +186,8 @@ export const agregarComprobante = async (req, res, next) => {
   try {
     // Insertar el comprobante en la base de datos con la URL de la imagen
     const queryResult = await pool.query(
-      "INSERT INTO comprobantes (proveedor, params, total, imagen) VALUES ($1, $2, $3, $4) RETURNING *",
-      [proveedor, params, total, imagen]
+      "INSERT INTO comprobantes (proveedor, params, total, imagen, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [proveedor, params, total, imagen, req.userId]
     );
 
     // Restar el total del comprobante del total del proveedor
@@ -183,7 +197,6 @@ export const agregarComprobante = async (req, res, next) => {
     ]);
 
     res.json(queryResult.rows[0]);
-    // });
   } catch (error) {
     if (error.code === "23505") {
       return res.status(409).json({
@@ -194,7 +207,7 @@ export const agregarComprobante = async (req, res, next) => {
   }
 };
 
-export const getComprobantes = async (req, res, next) => {
+export const getComprobantesAdmin = async (req, res, next) => {
   const { params } = req.query;
 
   try {
@@ -209,6 +222,27 @@ export const getComprobantes = async (req, res, next) => {
       const result = await pool.query(query);
       return res.json(result.rows);
     }
+  } catch (error) {
+    console.error("Error al obtener comprobantes:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+export const getComprobantes = async (req, res, next) => {
+  const { params } = req.query;
+
+  try {
+    let query = "SELECT * FROM comprobantes WHERE user_id = $1"; // Consulta base con `userId`
+    let values = [req.userId]; // Parámetro para la consulta
+
+    // Si se proporciona el parámetro "params", agregar filtro a la consulta
+    if (params) {
+      query += " AND params = $2"; // Condición adicional
+      values.push(params); // Agregar `params` al array de valores
+    }
+
+    const result = await pool.query(query, values); // Ejecutar la consulta
+    return res.json(result.rows); // Devolver resultados en formato JSON
   } catch (error) {
     console.error("Error al obtener comprobantes:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
@@ -235,7 +269,8 @@ export const getComprobante = async (req, res) => {
   }
 };
 
-export const getComprobantesMensual = async (req, res, next) => {
+//ADMIN
+export const getComprobantesMensualAdmin = async (req, res, next) => {
   try {
     const result = await pool.query(
       "SELECT * FROM comprobantes WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)"
@@ -244,6 +279,38 @@ export const getComprobantesMensual = async (req, res, next) => {
     return res.json(result.rows);
   } catch (error) {
     console.error("Error al obtener remuneracion:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+export const getComprobantesMensual = async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM comprobantes WHERE user_id = $1 " +
+        "AND created_at >= DATE_TRUNC('month', CURRENT_DATE) " + // Primer día del mes actual
+        "AND created_at < DATE_TRUNC('month', CURRENT_DATE + INTERVAL '1 month')", // Primer día del siguiente mes
+      [req.userId]
+    );
+
+    // Retorna el resultado como JSON
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener comprobantes mensuales:", error);
+    next(error); // Pasa el error al middleware de manejo de errores
+  }
+};
+
+export const getComprobantesDelDia = async (req, res, next) => {
+  try {
+    // Consulta para obtener todos los comprobantes creados en el día actual
+    const result = await pool.query(
+      "SELECT * FROM comprobantes WHERE created_at::date = CURRENT_DATE"
+    );
+
+    // Devuelve los resultados en formato JSON
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener comprobantes del día:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
   }
 };

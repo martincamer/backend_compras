@@ -1,7 +1,15 @@
 import { pool } from "../db.js";
 
-export const getOrdenes = async (req, res, next) => {
+export const getOrdenesAdmin = async (req, res, next) => {
   const result = await pool.query("SELECT * FROM orden");
+  return res.json(result.rows);
+};
+
+export const getOrdenes = async (req, res, next) => {
+  //obtener perfiles
+  const result = await pool.query("SELECT * FROM orden WHERE user_id = $1", [
+    req.userId,
+  ]);
   return res.json(result.rows);
 };
 
@@ -39,7 +47,7 @@ export const crearOrden = async (req, res, next) => {
     const precio_final_string = JSON.stringify(precio_final);
 
     const result = await pool.query(
-      "INSERT INTO orden (proveedor,numero_factura,detalle,fecha_factura,precio_final,localidad,provincia,datos,iva,usuario,role_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
+      "INSERT INTO orden (proveedor,numero_factura,detalle,fecha_factura,precio_final,localidad,provincia,datos,iva,usuario,role_id,fabrica, localidad_usuario, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *",
       [
         proveedor,
         numero_factura,
@@ -52,6 +60,9 @@ export const crearOrden = async (req, res, next) => {
         iva,
         username,
         userRole,
+        req.fabrica,
+        req.localidad,
+        req.userId,
       ]
     );
 
@@ -65,79 +76,6 @@ export const crearOrden = async (req, res, next) => {
     next(error);
   }
 };
-
-// export const guardarOrden = async (req, res, next) => {
-//   // Function logic remains the same
-//   const {
-//     id,
-//     proveedor,
-//     numero_factura,
-//     detalle,
-//     fecha_factura,
-//     precio_final,
-//     localidad,
-//     provincia,
-//     datos,
-//     iva,
-//   } = req.body;
-
-//   const { username, userRole } = req;
-
-//   try {
-//     // Convert the precio_final array into a string or JSON before inserting it into the database
-//     const precio_final_string = JSON.stringify(precio_final);
-
-//     let result;
-
-//     if (id) {
-//       // If an ID is provided, update the existing order
-//       result = await pool.query(
-//         "UPDATE orden SET proveedor=$1, numero_factura=$2, detalle=$3, fecha_factura=$4, precio_final=$5, localidad=$6, provincia=$7, datos=$8, iva=$9, usuario=$10, role_id=$11 WHERE id=$12 RETURNING *",
-//         [
-//           proveedor,
-//           numero_factura,
-//           detalle,
-//           fecha_factura,
-//           precio_final_string, // Use the converted string instead of the array directly
-//           localidad,
-//           provincia,
-//           datos,
-//           iva,
-//           username,
-//           userRole,
-//           id,
-//         ]
-//       );
-//     } else {
-//       // If no ID is provided, insert a new order
-//       result = await pool.query(
-//         "INSERT INTO orden (proveedor,numero_factura,detalle,fecha_factura,precio_final,localidad,provincia,datos,iva,usuario,role_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *",
-//         [
-//           proveedor,
-//           numero_factura,
-//           detalle,
-//           fecha_factura,
-//           precio_final_string, // Use the converted string instead of the array directly
-//           localidad,
-//           provincia,
-//           datos,
-//           iva,
-//           username,
-//           userRole,
-//         ]
-//       );
-//     }
-
-//     res.json(result.rows[0]);
-//   } catch (error) {
-//     if (error.code === "23505") {
-//       return res.status(409).json({
-//         message: "Ya existe una orden con ese id",
-//       });
-//     }
-//     next(error);
-//   }
-// };
 
 export const guardarOrden = async (req, res, next) => {
   const { id } = req.params; // IDs de la orden y el producto
@@ -479,7 +417,8 @@ export const eliminarOrden = async (req, res) => {
   return res.sendStatus(204);
 };
 
-export const getOrdenesMensual = async (req, res, next) => {
+//ADMIN ORDENES MENSUALES
+export const getOrdenesMensualAdmin = async (req, res, next) => {
   try {
     const result = await pool.query(
       "SELECT * FROM orden WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)"
@@ -492,7 +431,24 @@ export const getOrdenesMensual = async (req, res, next) => {
   }
 };
 
-export const getOrdenesPorRangoDeFechas = async (req, res, next) => {
+export const getOrdenesMensual = async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM orden WHERE user_id = $1 " +
+        "AND created_at >= DATE_TRUNC('month', CURRENT_DATE) " + // Primer día del mes actual
+        "AND created_at < DATE_TRUNC('month', CURRENT_DATE + INTERVAL '1 month')", // Primer día del siguiente mes
+      [req.userId]
+    );
+
+    // Retorna el resultado como JSON
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener salidas mensuales:", error);
+    return next(error); // Pasa el error al middleware de manejo de errores
+  }
+};
+
+export const getOrdenesPorRangoDeFechasAdmin = async (req, res, next) => {
   try {
     const { fechaInicio, fechaFin } = req.body;
 
@@ -521,6 +477,39 @@ export const getOrdenesPorRangoDeFechas = async (req, res, next) => {
     return res.json(result.rows);
   } catch (error) {
     console.error("Error al obtener órdenes:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+export const getOrdenesPorRangoDeFechas = async (req, res, next) => {
+  try {
+    const { fechaInicio, fechaFin } = req.body;
+
+    // Validación de fechas
+    if (
+      !fechaInicio ||
+      !fechaFin ||
+      !isValidDate(fechaInicio) ||
+      !isValidDate(fechaFin)
+    ) {
+      return res.status(400).json({ message: "Fechas inválidas" });
+    }
+
+    // Función de validación de fecha
+    function isValidDate(dateString) {
+      const regex = /^\d{4}-\d{2}-\d{2}$/;
+      return dateString.match(regex) !== null;
+    }
+
+    // Validación de zona horaria y ajuste UTC
+    const result = await pool.query(
+      "SELECT * FROM orden WHERE user_id = $1 AND created_at BETWEEN $2 AND $3 ORDER BY created_at",
+      [req.userId, fechaInicio, fechaFin]
+    );
+
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener remuneraciones:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
   }
 };
