@@ -207,7 +207,7 @@ export const agregarComprobante = async (req, res, next) => {
   }
 };
 
-export const getComprobantesAdmin = async (req, res, next) => {
+export const getComprobantes = async (req, res, next) => {
   const { params } = req.query;
 
   try {
@@ -228,7 +228,7 @@ export const getComprobantesAdmin = async (req, res, next) => {
   }
 };
 
-export const getComprobantes = async (req, res, next) => {
+export const getComprobantesA = async (req, res, next) => {
   const { params } = req.query;
 
   try {
