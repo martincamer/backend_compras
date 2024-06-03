@@ -15,6 +15,7 @@ import {
   getComprobantesDelDia,
   getProveedoresAdmin,
   getComprobantesMensualAdmin,
+  getComprobantesPorRangoDeFechas,
 } from "../controllers/proveedores.controllers.js";
 import { isAdmin } from "../middlewares/compras.middleware.js";
 
@@ -47,5 +48,11 @@ router.get("/comprobantes-dia", isAuth, getComprobantesDelDia);
 router.get("/comprobantes/:id", isAuth, isAdmin, getComprobante);
 
 router.put("/proveedores/:id/total", isAuth, actualizarTotalProveedor);
+
+router.post(
+  "/comprobantes-rango-fechas",
+  isAuth,
+  getComprobantesPorRangoDeFechas
+);
 
 export default router;

@@ -314,3 +314,36 @@ export const getComprobantesDelDia = async (req, res, next) => {
     return res.status(500).json({ message: "Error interno del servidor" });
   }
 };
+
+export const getComprobantesPorRangoDeFechas = async (req, res, next) => {
+  try {
+    const { fechaInicio, fechaFin } = req.body;
+
+    // Validación de fechas
+    if (
+      !fechaInicio ||
+      !fechaFin ||
+      !isValidDate(fechaInicio) ||
+      !isValidDate(fechaFin)
+    ) {
+      return res.status(400).json({ message: "Fechas inválidas" });
+    }
+
+    // Función de validación de fecha
+    function isValidDate(dateString) {
+      const regex = /^\d{4}-\d{2}-\d{2}$/;
+      return dateString.match(regex) !== null;
+    }
+
+    // Validación de zona horaria y ajuste UTC
+    const result = await pool.query(
+      "SELECT * FROM comprobantes WHERE user_id = $1 AND created_at BETWEEN $2 AND $3 ORDER BY created_at",
+      [req.userId, fechaInicio, fechaFin]
+    );
+
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener remuneraciones:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
