@@ -347,3 +347,69 @@ export const getComprobantesPorRangoDeFechas = async (req, res, next) => {
     return res.status(500).json({ message: "Error interno del servidor" });
   }
 };
+
+export const eliminarComprobanteActualizarProveedor = async (req, res) => {
+  const comprobanteId = req.params.id;
+
+  try {
+    // Start a transaction
+    await pool.query("BEGIN");
+
+    // Retrieve the comprobante amount and proveedor ID
+    const comprobanteResult = await pool.query(
+      "SELECT total, params FROM comprobantes WHERE id = $1",
+      [comprobanteId]
+    );
+
+    if (comprobanteResult.rowCount === 0) {
+      await pool.query("ROLLBACK");
+      return res.status(404).json({
+        message: "No existe ningún comprobante con ese id",
+      });
+    }
+
+    const { total, params } = comprobanteResult.rows[0];
+
+    // Delete the comprobante
+    const deleteResult = await pool.query(
+      "DELETE FROM comprobantes WHERE id = $1 RETURNING *",
+      [comprobanteId]
+    );
+
+    if (deleteResult.rowCount === 0) {
+      await pool.query("ROLLBACK");
+      return res.status(404).json({
+        message: "Error al eliminar el comprobante",
+      });
+    }
+
+    // Update the proveedor's total by adding the comprobante amount
+    const updateResult = await pool.query(
+      "UPDATE proveedor SET total = total + $1 WHERE id = $2 RETURNING *",
+      [total, params]
+    );
+
+    if (updateResult.rowCount === 0) {
+      await pool.query("ROLLBACK");
+      return res.status(404).json({
+        message: "Error al actualizar el total del proveedor",
+      });
+    }
+
+    // Commit the transaction
+    await pool.query("COMMIT");
+
+    return res.json({
+      message: "Comprobante eliminado y total del proveedor actualizado",
+      deletedComprobante: deleteResult.rows[0],
+      updatedProveedor: updateResult.rows[0],
+    });
+  } catch (error) {
+    await pool.query("ROLLBACK");
+    console.error(
+      "Error al eliminar comprobante y actualizar proveedor:",
+      error
+    );
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};

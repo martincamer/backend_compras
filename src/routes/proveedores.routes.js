@@ -16,6 +16,7 @@ import {
   getProveedoresAdmin,
   getComprobantesMensualAdmin,
   getComprobantesPorRangoDeFechas,
+  eliminarComprobanteActualizarProveedor,
 } from "../controllers/proveedores.controllers.js";
 import { isAdmin } from "../middlewares/compras.middleware.js";
 
@@ -54,5 +55,7 @@ router.post(
   isAuth,
   getComprobantesPorRangoDeFechas
 );
+
+router.delete("/comprobante/:id", eliminarComprobanteActualizarProveedor);
 
 export default router;
