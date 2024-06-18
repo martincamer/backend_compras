@@ -2,6 +2,7 @@ import Router from "express-promise-router";
 import { isAuth } from "../middlewares/auth.middleware.js";
 import { isAdmin } from "../middlewares/compras.middleware.js";
 import {
+  actualizarOrdenEstado,
   crearOrden,
   editarProductoOrden,
   editarProductoUnico,
@@ -41,6 +42,8 @@ router.put("/editar-producto-orden/:id", isAuth, isAdmin, editarProductoUnico);
 router.get("/orden/:idOrden/producto/:idProducto", obtenerProductoOrden);
 
 router.put("/orden/:idOrden/producto/:idProducto", editarProductoOrden);
+
+router.put("/orden/estado/:id", actualizarOrdenEstado);
 
 router.delete("/orden/:idOrden/producto/:idProducto", eliminarProductoOrden);
 

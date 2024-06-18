@@ -42,11 +42,11 @@ export const crearProveedor = async (req, res, next) => {
   const { proveedor, total, localidad, provincia } = req.body;
 
   try {
-    // Verifica si total está definido, de lo contrario, asigna un valor vacío//
+    // Verifica si total está definido, de lo contrario, asigna un valor vacío
     const totalValue = total !== undefined ? total : 0;
 
     const result = await pool.query(
-      "INSERT INTO proveedor (proveedor, total,localidad, provincia, fabrica, localidad_usuario, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+      "INSERT INTO proveedor (proveedor, total, localidad, provincia, fabrica, localidad_usuario, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
       [
         proveedor,
         totalValue,
@@ -58,53 +58,117 @@ export const crearProveedor = async (req, res, next) => {
       ]
     );
 
-    res.json(result.rows[0]);
+    // Obtener todas las filas de proveedores después de la inserción
+    const selectQuery = `
+      SELECT *
+      FROM proveedor`;
+
+    const selectResult = await pool.query(selectQuery);
+
+    // Devolver todas las filas de proveedores
+    res.json(selectResult.rows);
   } catch (error) {
     if (error.code === "23505") {
       return res.status(409).json({
         message: "Ya existe un proveedor con ese nombre",
       });
     }
-    next(error);
+    next(error); // Pasar el error al middleware de manejo de errores global
   }
 };
 
-export const actualizarProveedor = async (req, res) => {
+export const actualizarProveedor = async (req, res, next) => {
   const id = req.params.id;
-
-  const { proveedor, total } = req.body;
+  const { proveedor, localidad, provincia } = req.body;
 
   try {
-    const result = await pool.query(
-      "UPDATE proveedor SET proveedor = $1, total = $2 WHERE id = $3",
-      [proveedor, total, id]
-    );
+    // Actualizar solo los campos 'proveedor', 'localidad' y 'provincia'
+    const updateQuery = `
+      UPDATE proveedor
+      SET proveedor = $1, localidad = $2, provincia = $3
+      WHERE id = $4`;
 
-    if (result.rowCount === 0) {
-      return res.status(404).json({
-        message: "No existe un proveedores con ese id",
-      });
-    }
+    await pool.query(updateQuery, [proveedor, localidad, provincia, id]);
 
-    return res.json({
-      message: "Proveedor actualizado",
-    });
+    // Obtener todas las filas actualizadas de la tabla 'proveedor'
+    const selectQuery = `
+      SELECT *
+      FROM proveedor`;
+
+    const selectResult = await pool.query(selectQuery);
+
+    // Devolver todas las filas actualizadas de proveedores
+    res.json(selectResult.rows);
   } catch (error) {
-    console.error("Error al actualizar proveedores:", error);
-    return res.status(500).json({ message: "Error interno del servidor" });
+    console.error("Error al actualizar proveedor:", error);
+    next(error); // Pasar el error al middleware de manejo de errores global
   }
 };
+// export const actualizarProveedor = async (req, res) => {
+//   const id = req.params.id;
+
+//   const { proveedor, total } = req.body;
+
+//   try {
+//     const result = await pool.query(
+//       "UPDATE proveedor SET proveedor = $1, total = $2 WHERE id = $3",
+//       [proveedor, total, id]
+//     );
+
+//     if (result.rowCount === 0) {
+//       return res.status(404).json({
+//         message: "No existe un proveedores con ese id",
+//       });
+//     }
+
+//     return res.json({
+//       message: "Proveedor actualizado",
+//     });
+//   } catch (error) {
+//     console.error("Error al actualizar proveedores:", error);
+//     return res.status(500).json({ message: "Error interno del servidor" });
+//   }
+// };
+
+// export const actualizarTotalProveedor = async (req, res) => {
+//   const id = req.params.id;
+
+//   const { total } = req.body;
+
+//   try {
+//     const result = await pool.query(
+//       "UPDATE proveedor SET total = $1 WHERE id = $2",
+//       [total, id]
+//     );
+
+//     if (result.rowCount === 0) {
+//       return res.status(404).json({
+//         message: "No existe un proveedor con ese id",
+//       });
+//     }
+
+//     return res.json({
+//       message: "Total del proveedor actualizado",
+//     });
+//   } catch (error) {
+//     console.error("Error al actualizar el total del proveedor:", error);
+//     return res.status(500).json({ message: "Error interno del servidor" });
+//   }
+// };
 
 export const actualizarTotalProveedor = async (req, res) => {
   const id = req.params.id;
-
   const { total } = req.body;
 
   try {
-    const result = await pool.query(
-      "UPDATE proveedor SET total = $1 WHERE id = $2",
-      [total, id]
-    );
+    // Actualizar el total del proveedor y obtener el proveedor actualizado
+    const updateQuery = `
+      UPDATE proveedor
+      SET total = $1
+      WHERE id = $2
+      RETURNING *`;
+
+    const result = await pool.query(updateQuery, [total, id]);
 
     if (result.rowCount === 0) {
       return res.status(404).json({
@@ -112,8 +176,17 @@ export const actualizarTotalProveedor = async (req, res) => {
       });
     }
 
+    // Obtener todos los proveedores después de la actualización
+    const selectQuery = `
+      SELECT *
+      FROM proveedor`;
+
+    const allProveedores = await pool.query(selectQuery);
+
+    // Devolver todos los proveedores junto con el mensaje de éxito
     return res.json({
-      message: "Total del proveedor actualizado",
+      proveedor: result.rows[0],
+      proveedores: allProveedores.rows,
     });
   } catch (error) {
     console.error("Error al actualizar el total del proveedor:", error);
@@ -121,18 +194,47 @@ export const actualizarTotalProveedor = async (req, res) => {
   }
 };
 
+// export const eliminarProveedor = async (req, res) => {
+//   const result = await pool.query("DELETE FROM proveedor WHERE id = $1", [
+//     req.params.id,
+//   ]);
+
+//   if (result.rowCount === 0) {
+//     return res.status(404).json({
+//       message: "No existe ningún proveedores con ese id",
+//     });
+//   }
+
+//   return res.sendStatus(204);
+// };
+
 export const eliminarProveedor = async (req, res) => {
-  const result = await pool.query("DELETE FROM proveedor WHERE id = $1", [
-    req.params.id,
-  ]);
+  try {
+    // Eliminar el proveedor según el id proporcionado en los parámetros de la solicitud
+    const deleteResult = await pool.query(
+      "DELETE FROM proveedor WHERE id = $1",
+      [req.params.id]
+    );
 
-  if (result.rowCount === 0) {
-    return res.status(404).json({
-      message: "No existe ningún proveedores con ese id",
-    });
+    if (deleteResult.rowCount === 0) {
+      return res.status(404).json({
+        message: "No existe ningún proveedor con ese id",
+      });
+    }
+
+    // Obtener todos los proveedores restantes después de la eliminación
+    const selectQuery = `
+      SELECT *
+      FROM proveedor`;
+
+    const selectResult = await pool.query(selectQuery);
+
+    // Devolver todos los proveedores en formato JSON
+    return res.json(selectResult.rows);
+  } catch (error) {
+    console.error("Error al eliminar el proveedor:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
   }
-
-  return res.sendStatus(204);
 };
 
 export const actualizarProveedorCompra = async (req, res) => {
@@ -171,9 +273,14 @@ export const actualizarProveedorCompra = async (req, res) => {
       });
     }
 
-    return res.json({
-      message: "Proveedor actualizado",
-    });
+    const selectQuery = `
+      SELECT *
+      FROM proveedor`;
+
+    const selectResult = await pool.query(selectQuery);
+
+    // Devolver todos los proveedores en formato JSON
+    return res.json(selectResult.rows);
   } catch (error) {
     console.error("Error al actualizar proveedor:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
@@ -185,10 +292,18 @@ export const agregarComprobante = async (req, res, next) => {
 
   try {
     // Insertar el comprobante en la base de datos con la URL de la imagen
-    const queryResult = await pool.query(
-      "INSERT INTO comprobantes (proveedor, params, total, imagen, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [proveedor, params, total, imagen, req.userId]
-    );
+    const insertQuery = `
+      INSERT INTO comprobantes (proveedor, params, total, imagen, user_id)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *`;
+
+    const queryResult = await pool.query(insertQuery, [
+      proveedor,
+      params,
+      total,
+      imagen,
+      req.userId,
+    ]);
 
     // Restar el total del comprobante del total del proveedor
     await pool.query("UPDATE proveedor SET total = total - $1 WHERE id = $2", [
@@ -196,16 +311,125 @@ export const agregarComprobante = async (req, res, next) => {
       params,
     ]);
 
-    res.json(queryResult.rows[0]);
+    // Obtener todas las filas de comprobantes después de la inserción
+    const selectQueryComprobantes = `
+      SELECT *
+      FROM comprobantes`;
+
+    const selectResultComprobantes = await pool.query(selectQueryComprobantes);
+
+    // Obtener todas las filas de proveedores después de la actualización
+    const selectQueryProveedores = `
+      SELECT *
+      FROM proveedor`;
+
+    const selectResultProveedores = await pool.query(selectQueryProveedores);
+
+    // Obtener el proveedor específico actualizado
+    const selectQueryProveedorActualizado = `
+      SELECT *
+      FROM proveedor
+      WHERE id = $1`;
+
+    const selectResultProveedorActualizado = await pool.query(
+      selectQueryProveedorActualizado,
+      [params]
+    );
+
+    // Devolver todas las respuestas en una sola respuesta JSON
+    res.json({
+      comprobantes: selectResultComprobantes.rows,
+      proveedores: selectResultProveedores.rows,
+      proveedorActualizado: selectResultProveedorActualizado.rows[0], // Se asume que solo habrá una fila de proveedor actualizado
+    });
   } catch (error) {
     if (error.code === "23505") {
       return res.status(409).json({
         message: "Ya existe un proveedor con ese nombre",
       });
     }
-    next(error);
+    next(error); // Pasar el error al middleware de manejo de errores global
   }
 };
+// export const agregarComprobante = async (req, res, next) => {
+//   const { proveedor, params, total, imagen } = req.body;
+
+//   try {
+//     // Insertar el comprobante en la base de datos con la URL de la imagen
+//     const insertQuery = `
+//       INSERT INTO comprobantes (proveedor, params, total, imagen, user_id)
+//       VALUES ($1, $2, $3, $4, $5)
+//       RETURNING *`;
+
+//     const queryResult = await pool.query(insertQuery, [
+//       proveedor,
+//       params,
+//       total,
+//       imagen,
+//       req.userId,
+//     ]);
+
+//     // Restar el total del comprobante del total del proveedor
+//     await pool.query("UPDATE proveedor SET total = total - $1 WHERE id = $2", [
+//       total,
+//       params,
+//     ]);
+
+//     // Obtener todas las filas de comprobantes después de la inserción
+//     const selectQueryComprobantes = `
+//       SELECT *
+//       FROM comprobantes`;
+
+//     const selectResultComprobantes = await pool.query(selectQueryComprobantes);
+
+//     // Obtener todas las filas de proveedores después de la actualización
+//     const selectQueryProveedores = `
+//       SELECT *
+//       FROM proveedor`;
+
+//     const selectResultProveedores = await pool.query(selectQueryProveedores);
+
+//     // Devolver ambas respuestas en una sola respuesta JSON
+//     res.json({
+//       comprobantes: selectResultComprobantes.rows,
+//       proveedores: selectResultProveedores.rows,
+//     });
+//   } catch (error) {
+//     if (error.code === "23505") {
+//       return res.status(409).json({
+//         message: "Ya existe un proveedor con ese nombre",
+//       });
+//     }
+//     next(error); // Pasar el error al middleware de manejo de errores global
+//   }
+// };
+
+// export const agregarComprobante = async (req, res, next) => {
+//   const { proveedor, params, total, imagen } = req.body;
+
+//   try {
+//     // Insertar el comprobante en la base de datos con la URL de la imagen
+//     const queryResult = await pool.query(
+//       "INSERT INTO comprobantes (proveedor, params, total, imagen, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+//       [proveedor, params, total, imagen, req.userId]
+//     );
+
+//     // Restar el total del comprobante del total del proveedor
+//     await pool.query("UPDATE proveedor SET total = total - $1 WHERE id = $2", [
+//       total,
+//       params,
+//     ]);
+
+//     res.json(queryResult.rows[0]);
+//   } catch (error) {
+//     if (error.code === "23505") {
+//       return res.status(409).json({
+//         message: "Ya existe un proveedor con ese nombre",
+//       });
+//     }
+//     next(error);
+//   }
+// };
 
 export const getComprobantes = async (req, res, next) => {
   const { params } = req.query;
@@ -399,10 +623,26 @@ export const eliminarComprobanteActualizarProveedor = async (req, res) => {
     // Commit the transaction
     await pool.query("COMMIT");
 
+    // Obtener todas las filas de comprobantes después de la inserción
+    const selectQueryComprobantes = `
+      SELECT *
+      FROM comprobantes`;
+
+    const selectResultComprobantes = await pool.query(selectQueryComprobantes);
+
+    // Obtener todas las filas de proveedores después de la actualización
+    const selectQueryProveedores = `
+      SELECT *
+      FROM proveedor`;
+
+    const selectResultProveedores = await pool.query(selectQueryProveedores);
+
     return res.json({
       message: "Comprobante eliminado y total del proveedor actualizado",
       deletedComprobante: deleteResult.rows[0],
       updatedProveedor: updateResult.rows[0],
+      proveedores: selectResultProveedores.rows,
+      comprobantes: selectResultComprobantes.rows,
     });
   } catch (error) {
     await pool.query("ROLLBACK");

@@ -26,49 +26,112 @@ export const getProducto = async (req, res) => {
   return res.json(result.rows[0]);
 };
 
+// export const crearProducto = async (req, res, next) => {
+//   const { detalle, categoria, precio_und } = req.body;
+
+//   const { username, userRole } = req;
+
+//   try {
+//     const result = await pool.query(
+//       "INSERT INTO producto (detalle,categoria,precio_und,usuario, role_id, user_id) VALUES ($1, $2, $3, $4, $5,$6) RETURNING *",
+//       [detalle, categoria, precio_und, username, userRole, req.userId]
+//     );
+
+//     res.json(result.rows[0]);
+//   } catch (error) {
+//     if (error.code === "23505") {
+//       return res.status(409).json({
+//         message: "Ya existe un producto con ese id",
+//       });
+//     }
+//     next(error);
+//   }
+// };
+
 export const crearProducto = async (req, res, next) => {
   const { detalle, categoria, precio_und } = req.body;
-
   const { username, userRole } = req;
 
   try {
+    // Insertar el nuevo producto en la base de datos
     const result = await pool.query(
-      "INSERT INTO producto (detalle,categoria,precio_und,usuario, role_id, user_id) VALUES ($1, $2, $3, $4, $5,$6) RETURNING *",
+      "INSERT INTO producto (detalle, categoria, precio_und, usuario, role_id, user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
       [detalle, categoria, precio_und, username, userRole, req.userId]
     );
 
-    res.json(result.rows[0]);
+    // Obtener todos los productos después de la inserción
+    const selectQuery = `
+      SELECT *
+      FROM producto`;
+
+    const selectResult = await pool.query(selectQuery);
+
+    // Devolver todos los productos en formato JSON
+    res.json(selectResult.rows);
   } catch (error) {
     if (error.code === "23505") {
       return res.status(409).json({
         message: "Ya existe un producto con ese id",
       });
     }
-    next(error);
+    next(error); // Pasar el error al middleware de manejo de errores global
   }
 };
 
+// export const actualizarProducto = async (req, res) => {
+//   const id = req.params.id;
+
+//   const { username, userRole } = req;
+
+//   const { detalle, categoria, precio_und } = req.body;
+
+//   const result = await pool.query(
+//     "UPDATE producto SET detalle = $1, categoria = $2, precio_und = $3, usuario = $4, role_id = $5 WHERE id = $6",
+//     [detalle, categoria, precio_und, username, userRole, id]
+//   );
+
+//   if (result.rowCount === 0) {
+//     return res.status(404).json({
+//       message: "No existe un producto con ese id",
+//     });
+//   }
+
+//   return res.json({
+//     message: "Producto actualizado",
+//   });
+// };
+
 export const actualizarProducto = async (req, res) => {
   const id = req.params.id;
-
   const { username, userRole } = req;
-
   const { detalle, categoria, precio_und } = req.body;
 
-  const result = await pool.query(
-    "UPDATE producto SET detalle = $1, categoria = $2, precio_und = $3, usuario = $4, role_id = $5 WHERE id = $6",
-    [detalle, categoria, precio_und, username, userRole, id]
-  );
+  try {
+    // Actualizar el producto en la base de datos
+    const result = await pool.query(
+      "UPDATE producto SET detalle = $1, categoria = $2, precio_und = $3, usuario = $4, role_id = $5 WHERE id = $6",
+      [detalle, categoria, precio_und, username, userRole, id]
+    );
 
-  if (result.rowCount === 0) {
-    return res.status(404).json({
-      message: "No existe un producto con ese id",
-    });
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        message: "No existe un producto con ese id",
+      });
+    }
+
+    // Obtener todos los productos después de la actualización
+    const selectQuery = `
+      SELECT *
+      FROM producto`;
+
+    const selectResult = await pool.query(selectQuery);
+
+    // Devolver todos los productos en formato JSON
+    res.json(selectResult.rows);
+  } catch (error) {
+    console.error("Error al actualizar el producto:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
   }
-
-  return res.json({
-    message: "Producto actualizado",
-  });
 };
 
 export const actualizarPrecioProducto = async (req, res) => {
@@ -108,18 +171,47 @@ export const actualizarPrecioProducto = async (req, res) => {
   });
 };
 
+// export const eliminarProducto = async (req, res) => {
+//   const result = await pool.query("DELETE FROM producto WHERE id = $1", [
+//     req.params.id,
+//   ]);
+
+//   if (result.rowCount === 0) {
+//     return res.status(404).json({
+//       message: "No existe ningún producto con ese id",
+//     });
+//   }
+
+//   return res.sendStatus(204);
+// };
+
 export const eliminarProducto = async (req, res) => {
-  const result = await pool.query("DELETE FROM producto WHERE id = $1", [
-    req.params.id,
-  ]);
+  try {
+    // Eliminar el producto según el id proporcionado en los parámetros de la solicitud
+    const deleteResult = await pool.query(
+      "DELETE FROM producto WHERE id = $1",
+      [req.params.id]
+    );
 
-  if (result.rowCount === 0) {
-    return res.status(404).json({
-      message: "No existe ningún producto con ese id",
-    });
+    if (deleteResult.rowCount === 0) {
+      return res.status(404).json({
+        message: "No existe ningún producto con ese id",
+      });
+    }
+
+    // Obtener todos los productos restantes después de la eliminación
+    const selectQuery = `
+      SELECT *
+      FROM producto`;
+
+    const selectResult = await pool.query(selectQuery);
+
+    // Devolver todos los productos en formato JSON
+    res.json(selectResult.rows);
+  } catch (error) {
+    console.error("Error al eliminar el producto:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
   }
-
-  return res.sendStatus(204);
 };
 
 export const getProductosMensuales = async (req, res, next) => {
@@ -177,50 +269,112 @@ export const getCategorias = async (req, res, next) => {
   return res.json(result.rows);
 };
 
+// export const crearCategorias = async (req, res, next) => {
+//   const { detalle } = req.body;
+
+//   const { username, userRole } = req;
+
+//   try {
+//     const result = await pool.query(
+//       "INSERT INTO categorias (detalle,usuario, role_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *",
+//       [detalle, username, userRole, req.userId]
+//     );
+
+//     res.json(result.rows[0]);
+//   } catch (error) {
+//     if (error.code === "23505") {
+//       return res.status(409).json({
+//         message: "Ya existe un producto con ese id",
+//       });
+//     }
+//     next(error);
+//   }
+// };
+
 export const crearCategorias = async (req, res, next) => {
   const { detalle } = req.body;
-
   const { username, userRole } = req;
 
   try {
+    // Insertar la nueva categoría en la base de datos
     const result = await pool.query(
-      "INSERT INTO categorias (detalle,usuario, role_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *",
+      "INSERT INTO categorias (detalle, usuario, role_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *",
       [detalle, username, userRole, req.userId]
     );
 
-    res.json(result.rows[0]);
+    // Obtener todas las categorías después de la inserción
+    const selectQuery = `
+      SELECT *
+      FROM categorias`;
+
+    const selectResult = await pool.query(selectQuery);
+
+    // Devolver todas las categorías en formato JSON
+    res.json(selectResult.rows);
   } catch (error) {
     if (error.code === "23505") {
       return res.status(409).json({
-        message: "Ya existe un producto con ese id",
+        message: "Ya existe una categoría con ese detalle",
       });
     }
-    next(error);
+    next(error); // Pasar el error al middleware de manejo de errores global
   }
 };
 
 export const actualizarCategorias = async (req, res) => {
   const id = req.params.id;
-
   const { username, userRole } = req;
-
   const { detalle } = req.body;
 
-  const result = await pool.query(
-    "UPDATE categorias SET detalle = $1, usuario = $2, role_id = $3 WHERE id = $4",
-    [detalle, username, userRole, id]
-  );
+  try {
+    // Actualizar la categoría en la base de datos
+    const result = await pool.query(
+      "UPDATE categorias SET detalle = $1, usuario = $2, role_id = $3 WHERE id = $4",
+      [detalle, username, userRole, id]
+    );
 
-  if (result.rowCount === 0) {
-    return res.status(404).json({
-      message: "No existe un producto con ese id",
-    });
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        message: "No existe una categoría con ese id",
+      });
+    }
+
+    // Obtener todas las categorías después de la actualización
+    const selectQuery = `
+      SELECT *
+      FROM categorias`;
+
+    const selectResult = await pool.query(selectQuery);
+
+    // Devolver todas las categorías en formato JSON
+    res.json(selectResult.rows);
+  } catch (error) {
+    console.error("Error al actualizar la categoría:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
   }
-
-  return res.json({
-    message: "Producto actualizado",
-  });
 };
+// export const actualizarCategorias = async (req, res) => {
+//   const id = req.params.id;
+
+//   const { username, userRole } = req;
+
+//   const { detalle } = req.body;
+
+//   const result = await pool.query(
+//     "UPDATE categorias SET detalle = $1, usuario = $2, role_id = $3 WHERE id = $4",
+//     [detalle, username, userRole, id]
+//   );
+
+//   if (result.rowCount === 0) {
+//     return res.status(404).json({
+//       message: "No existe un producto con ese id",
+//     });
+//   }
+
+//   return res.json({
+//     message: "Producto actualizado",
+//   });
+// };
 
 export const getCategoria = async (req, res) => {
   const result = await pool.query("SELECT * FROM categorias WHERE id = $1", [
@@ -237,15 +391,44 @@ export const getCategoria = async (req, res) => {
 };
 
 export const eliminarCategoria = async (req, res) => {
-  const result = await pool.query("DELETE FROM categorias WHERE id = $1", [
-    req.params.id,
-  ]);
+  try {
+    // Eliminar la categoría según el id proporcionado en los parámetros de la solicitud
+    const deleteResult = await pool.query(
+      "DELETE FROM categorias WHERE id = $1",
+      [req.params.id]
+    );
 
-  if (result.rowCount === 0) {
-    return res.status(404).json({
-      message: "No existe ningún producto con ese id",
-    });
+    if (deleteResult.rowCount === 0) {
+      return res.status(404).json({
+        message: "No existe ninguna categoría con ese id",
+      });
+    }
+
+    // Obtener todas las categorías restantes después de la eliminación
+    const selectQuery = `
+      SELECT *
+      FROM categorias`;
+
+    const selectResult = await pool.query(selectQuery);
+
+    // Devolver todas las categorías en formato JSON
+    res.json(selectResult.rows);
+  } catch (error) {
+    console.error("Error al eliminar la categoría:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
   }
-
-  return res.sendStatus(204);
 };
+
+// export const eliminarCategoria = async (req, res) => {
+//   const result = await pool.query("DELETE FROM categorias WHERE id = $1", [
+//     req.params.id,
+//   ]);
+
+//   if (result.rowCount === 0) {
+//     return res.status(404).json({
+//       message: "No existe ningún producto con ese id",
+//     });
+//   }
+
+//   return res.sendStatus(204);
+// };
