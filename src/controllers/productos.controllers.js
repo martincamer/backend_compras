@@ -26,28 +26,6 @@ export const getProducto = async (req, res) => {
   return res.json(result.rows[0]);
 };
 
-// export const crearProducto = async (req, res, next) => {
-//   const { detalle, categoria, precio_und } = req.body;
-
-//   const { username, userRole } = req;
-
-//   try {
-//     const result = await pool.query(
-//       "INSERT INTO producto (detalle,categoria,precio_und,usuario, role_id, user_id) VALUES ($1, $2, $3, $4, $5,$6) RETURNING *",
-//       [detalle, categoria, precio_und, username, userRole, req.userId]
-//     );
-
-//     res.json(result.rows[0]);
-//   } catch (error) {
-//     if (error.code === "23505") {
-//       return res.status(409).json({
-//         message: "Ya existe un producto con ese id",
-//       });
-//     }
-//     next(error);
-//   }
-// };
-
 export const crearProducto = async (req, res, next) => {
   const { detalle, categoria, precio_und } = req.body;
   const { username, userRole } = req;
@@ -59,14 +37,24 @@ export const crearProducto = async (req, res, next) => {
       [detalle, categoria, precio_und, username, userRole, req.userId]
     );
 
-    // Obtener todos los productos después de la inserción
+    // // Obtener todos los productos después de la inserción
+    // const selectQuery = `
+    //   SELECT *
+    //   FROM producto`;
+
+    // const selectResult = await pool.query(selectQuery);
+
+    // // Devolver todos los productos en formato JSON
+    // res.json(selectResult.rows);
+
     const selectQuery = `
       SELECT *
-      FROM producto`;
+      FROM producto
+      WHERE user_id = $1`;
 
-    const selectResult = await pool.query(selectQuery);
+    const selectResult = await pool.query(selectQuery, [req.userId]);
 
-    // Devolver todos los productos en formato JSON
+    // Devolver todas las órdenes como respuesta
     res.json(selectResult.rows);
   } catch (error) {
     if (error.code === "23505") {
@@ -74,7 +62,7 @@ export const crearProducto = async (req, res, next) => {
         message: "Ya existe un producto con ese id",
       });
     }
-    next(error); // Pasar el error al middleware de manejo de errores global
+    next(error);
   }
 };
 
@@ -119,14 +107,14 @@ export const actualizarProducto = async (req, res) => {
       });
     }
 
-    // Obtener todos los productos después de la actualización
     const selectQuery = `
       SELECT *
-      FROM producto`;
+      FROM producto
+      WHERE user_id = $1`;
 
-    const selectResult = await pool.query(selectQuery);
+    const selectResult = await pool.query(selectQuery, [req.userId]);
 
-    // Devolver todos los productos en formato JSON
+    // Devolver todas las órdenes como respuesta
     res.json(selectResult.rows);
   } catch (error) {
     console.error("Error al actualizar el producto:", error);
@@ -166,24 +154,16 @@ export const actualizarPrecioProducto = async (req, res) => {
     });
   }
 
-  return res.json({
-    message: "Precio del producto actualizado",
-  });
+  const selectQuery = `
+      SELECT *
+      FROM producto
+      WHERE user_id = $1`;
+
+  const selectResult = await pool.query(selectQuery, [req.userId]);
+
+  // Devolver todas las órdenes como respuesta
+  return res.json(selectResult.rows);
 };
-
-// export const eliminarProducto = async (req, res) => {
-//   const result = await pool.query("DELETE FROM producto WHERE id = $1", [
-//     req.params.id,
-//   ]);
-
-//   if (result.rowCount === 0) {
-//     return res.status(404).json({
-//       message: "No existe ningún producto con ese id",
-//     });
-//   }
-
-//   return res.sendStatus(204);
-// };
 
 export const eliminarProducto = async (req, res) => {
   try {
@@ -199,14 +179,14 @@ export const eliminarProducto = async (req, res) => {
       });
     }
 
-    // Obtener todos los productos restantes después de la eliminación
     const selectQuery = `
       SELECT *
-      FROM producto`;
+      FROM producto
+      WHERE user_id = $1`;
 
-    const selectResult = await pool.query(selectQuery);
+    const selectResult = await pool.query(selectQuery, [req.userId]);
 
-    // Devolver todos los productos en formato JSON
+    // Devolver todas las órdenes como respuesta
     res.json(selectResult.rows);
   } catch (error) {
     console.error("Error al eliminar el producto:", error);
@@ -268,28 +248,6 @@ export const getCategorias = async (req, res, next) => {
   );
   return res.json(result.rows);
 };
-
-// export const crearCategorias = async (req, res, next) => {
-//   const { detalle } = req.body;
-
-//   const { username, userRole } = req;
-
-//   try {
-//     const result = await pool.query(
-//       "INSERT INTO categorias (detalle,usuario, role_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *",
-//       [detalle, username, userRole, req.userId]
-//     );
-
-//     res.json(result.rows[0]);
-//   } catch (error) {
-//     if (error.code === "23505") {
-//       return res.status(409).json({
-//         message: "Ya existe un producto con ese id",
-//       });
-//     }
-//     next(error);
-//   }
-// };
 
 export const crearCategorias = async (req, res, next) => {
   const { detalle } = req.body;
@@ -353,28 +311,6 @@ export const actualizarCategorias = async (req, res) => {
     return res.status(500).json({ message: "Error interno del servidor" });
   }
 };
-// export const actualizarCategorias = async (req, res) => {
-//   const id = req.params.id;
-
-//   const { username, userRole } = req;
-
-//   const { detalle } = req.body;
-
-//   const result = await pool.query(
-//     "UPDATE categorias SET detalle = $1, usuario = $2, role_id = $3 WHERE id = $4",
-//     [detalle, username, userRole, id]
-//   );
-
-//   if (result.rowCount === 0) {
-//     return res.status(404).json({
-//       message: "No existe un producto con ese id",
-//     });
-//   }
-
-//   return res.json({
-//     message: "Producto actualizado",
-//   });
-// };
 
 export const getCategoria = async (req, res) => {
   const result = await pool.query("SELECT * FROM categorias WHERE id = $1", [
@@ -418,17 +354,3 @@ export const eliminarCategoria = async (req, res) => {
     return res.status(500).json({ message: "Error interno del servidor" });
   }
 };
-
-// export const eliminarCategoria = async (req, res) => {
-//   const result = await pool.query("DELETE FROM categorias WHERE id = $1", [
-//     req.params.id,
-//   ]);
-
-//   if (result.rowCount === 0) {
-//     return res.status(404).json({
-//       message: "No existe ningún producto con ese id",
-//     });
-//   }
-
-//   return res.sendStatus(204);
-// };

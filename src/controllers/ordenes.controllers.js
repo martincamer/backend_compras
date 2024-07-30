@@ -27,58 +27,6 @@ export const getOrden = async (req, res) => {
   return res.json(result.rows[0]);
 };
 
-// export const crearOrden = async (req, res, next) => {
-//   const {
-//     proveedor,
-//     numero_factura,
-//     detalle,
-//     fecha_factura,
-//     precio_final,
-//     localidad,
-//     provincia,
-//     datos,
-//     iva,
-//     estado,
-//   } = req.body;
-
-//   const { username, userRole } = req;
-
-//   try {
-//     // Convert the precio_final array into a string or JSON before inserting it into the database
-//     const precio_final_string = JSON.stringify(precio_final);
-
-//     const result = await pool.query(
-//       "INSERT INTO orden (proveedor,numero_factura,detalle,fecha_factura,precio_final,localidad,provincia,datos,iva, estado, usuario,role_id,fabrica, localidad_usuario, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *",
-//       [
-//         proveedor,
-//         numero_factura,
-//         detalle,
-//         fecha_factura,
-//         precio_final_string, // Use the converted string instead of the array directly
-//         localidad,
-//         provincia,
-//         datos,
-//         iva,
-//         estado,
-//         username,
-//         userRole,
-//         req.fabrica,
-//         req.localidad,
-//         req.userId,
-//       ]
-//     );
-
-//     res.json(result.rows[0]);
-//   } catch (error) {
-//     if (error.code === "23505") {
-//       return res.status(409).json({
-//         message: "Ya existe una orden con ese id",
-//       });
-//     }
-//     next(error);
-//   }
-// };
-
 export const crearOrden = async (req, res, next) => {
   const {
     proveedor,
@@ -124,15 +72,21 @@ export const crearOrden = async (req, res, next) => {
     );
 
     const selectQuery = `
-      SELECT *
-      FROM proveedor`;
+  SELECT *
+  FROM proveedor
+  WHERE user_id = $1
+`;
 
     const selectQueryCompras = `
       SELECT *
-      FROM orden`;
+  FROM orden
+  WHERE user_id = $1`;
 
-    const selectResult = await pool.query(selectQuery);
-    const selectResultOrden = await pool.query(selectQueryCompras);
+    const selectResult = await pool.query(selectQuery, [req.userId]);
+
+    const selectResultOrden = await pool.query(selectQueryCompras, [
+      req.userId,
+    ]);
 
     // res.json(result.rows[0]);
     return res.json({
@@ -211,17 +165,22 @@ export const guardarOrden = async (req, res, next) => {
       [previousPrecioFinal, precio_final, proveedor]
     );
 
-    // res.json(result.rows[0]);
     const selectQuery = `
-      SELECT *
-      FROM proveedor`;
+  SELECT *
+  FROM proveedor
+  WHERE user_id = $1
+`;
 
     const selectQueryCompras = `
       SELECT *
-      FROM orden`;
+  FROM orden
+  WHERE user_id = $1`;
 
-    const selectResult = await pool.query(selectQuery);
-    const selectResultOrden = await pool.query(selectQueryCompras);
+    const selectResult = await pool.query(selectQuery, [req.userId]);
+
+    const selectResultOrden = await pool.query(selectQueryCompras, [
+      req.userId,
+    ]);
 
     // res.json(result.rows[0]);
     return res.json({
@@ -492,47 +451,6 @@ export const actualizarOrden = async (req, res) => {
   });
 };
 
-// export const actualizarOrdenEstado = async (req, res, next) => {
-//   const id = req.params.id;
-//   const { username, userRole } = req;
-//   const { estado } = req.body;
-
-//   try {
-//     // Actualizar solo el campo 'estado'
-//     const updateQuery = `
-//       UPDATE orden
-//       SET estado = $1, usuario = $2, role_id = $3
-//       WHERE id = $4
-//       RETURNING *`;
-
-//     const updateResult = await pool.query(updateQuery, [
-//       estado,
-//       username,
-//       userRole,
-//       id,
-//     ]);
-
-//     if (updateResult.rowCount === 0) {
-//       return res.status(404).json({
-//         message: "No existe una orden con ese id",
-//       });
-//     }
-
-//     // Obtener los datos actualizados de la orden completa
-//     const selectQuery = `
-//       SELECT *
-//       FROM orden
-//       WHERE id = $1`;
-
-//     const selectResult = await pool.query(selectQuery, [id]);
-
-//     // Devolver el arreglo completo de la orden actualizada
-//     res.json(selectResult);
-//   } catch (error) {
-//     next(error); // Pasar el error al middleware de manejo de errores global
-//   }
-// };
-
 export const actualizarOrdenEstado = async (req, res, next) => {
   const id = req.params.id;
   const { username, userRole } = req;
@@ -547,61 +465,20 @@ export const actualizarOrdenEstado = async (req, res, next) => {
 
     await pool.query(updateQuery, [estado, username, userRole, id]);
 
-    // Obtener todos los datos actualizados de la tabla 'orden'
     const selectQuery = `
       SELECT *
-      FROM orden`;
+      FROM orden
+      WHERE localidad_usuario = $1`;
 
-    const selectResult = await pool.query(selectQuery);
+    const selectResult = await pool.query(selectQuery, [req.localidad]);
 
-    // Devolver todas las filas de la tabla 'orden'
     res.json(selectResult.rows);
+    // Respond with the new order, all orders from the same 'localidad' and 'sucursal', and updated 'proveedor' details
   } catch (error) {
     next(error); // Pasar el error al middleware de manejo de errores global
   }
 };
 
-// export const eliminarOrden = async (req, res) => {
-//   const result = await pool.query("DELETE FROM orden WHERE id = $1", [
-//     req.params.id,
-//   ]);
-
-//   if (result.rowCount === 0) {
-//     return res.status(404).json({
-//       message: "No existe ninguna orden con ese id",
-//     });
-//   }
-
-//   return res.sendStatus(204);
-// };
-
-// export const eliminarOrden = async (req, res) => {
-//   const orderId = req.params.id;
-
-//   try {
-//     // Eliminar la orden especificada por su ID
-//     const deleteResult = await pool.query("DELETE FROM orden WHERE id = $1", [
-//       orderId,
-//     ]);
-
-//     // Verificar si se eliminó alguna fila
-//     if (deleteResult.rowCount === 0) {
-//       return res.status(404).json({
-//         message: "No existe ninguna orden con ese id",
-//       });
-//     }
-
-//     // Obtener todas las órdenes restantes después de la eliminación
-//     const selectQuery = "SELECT * FROM orden";
-//     const selectResult = await pool.query(selectQuery);
-
-//     // Devolver todas las órdenes como respuesta
-//     res.json(selectResult.rows);
-//   } catch (error) {
-//     console.error("Error al eliminar la orden:", error);
-//     return res.status(500).json({ message: "Error interno del servidor" });
-//   }
-// };
 export const eliminarOrden = async (req, res) => {
   const orderId = req.params.id;
 
@@ -643,17 +520,35 @@ export const eliminarOrden = async (req, res) => {
 
     await pool.query(updateProveedorQuery, [precio_final, proveedor]);
 
-    // Obtener todas las órdenes restantes después de la eliminación
-    const selectQuery = "SELECT * FROM orden";
-    const selectResult = await pool.query(selectQuery);
-    // Obtener todas las órdenes restantes después de la eliminación
-    const selectQueryProveedor = "SELECT * FROM proveedor";
-    const selectResultProveedor = await pool.query(selectQueryProveedor);
+    // // Obtener todas las órdenes restantes después de la eliminación
+    // const selectQuery = "SELECT * FROM orden";
+    // const selectResult = await pool.query(selectQuery);
 
-    // Devolver todas las órdenes como respuesta
-    res.json({
-      proveedores: selectResultProveedor.rows,
-      ordenes: selectResult.rows,
+    // // Obtener todas las órdenes restantes después de la eliminación
+    // const selectQueryProveedor = "SELECT * FROM proveedor";
+    // const selectResultProveedor = await pool.query(selectQueryProveedor);
+
+    const selectQuery = `
+  SELECT *
+  FROM proveedor
+  WHERE user_id = $1
+`;
+
+    const selectQueryCompras = `
+      SELECT *
+  FROM orden
+  WHERE user_id = $1`;
+
+    const selectResult = await pool.query(selectQuery, [req.userId]);
+
+    const selectResultOrden = await pool.query(selectQueryCompras, [
+      req.userId,
+    ]);
+
+    // res.json(result.rows[0]);
+    return res.json({
+      proveedores: selectResult.rows,
+      ordenes: selectResultOrden.rows,
     });
   } catch (error) {
     console.error("Error al eliminar la orden:", error);

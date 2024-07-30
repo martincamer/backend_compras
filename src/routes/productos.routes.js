@@ -33,6 +33,8 @@ router.get("/categoria/:id", isAuth, isAdmin, getCategoria);
 
 router.delete("/eliminar-categoria/:id", isAuth, isAdmin, eliminarCategoria);
 
+router.delete("/producto/:id", isAuth, isAdmin, eliminarProducto);
+
 router.post(
   "/productos/rango-fechas",
   isAuth,

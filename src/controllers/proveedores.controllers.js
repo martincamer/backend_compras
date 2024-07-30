@@ -58,14 +58,14 @@ export const crearProveedor = async (req, res, next) => {
       ]
     );
 
-    // Obtener todas las filas de proveedores después de la inserción
     const selectQuery = `
       SELECT *
-      FROM proveedor`;
+      FROM proveedor
+      WHERE user_id = $1`;
 
-    const selectResult = await pool.query(selectQuery);
+    const selectResult = await pool.query(selectQuery, [req.userId]);
 
-    // Devolver todas las filas de proveedores
+    // Devolver todas las órdenes como respuesta
     res.json(selectResult.rows);
   } catch (error) {
     if (error.code === "23505") {
@@ -79,25 +79,25 @@ export const crearProveedor = async (req, res, next) => {
 
 export const actualizarProveedor = async (req, res, next) => {
   const id = req.params.id;
-  const { proveedor, localidad, provincia } = req.body;
+  const { proveedor, localidad, provincia, total } = req.body;
 
   try {
     // Actualizar solo los campos 'proveedor', 'localidad' y 'provincia'
     const updateQuery = `
       UPDATE proveedor
-      SET proveedor = $1, localidad = $2, provincia = $3
-      WHERE id = $4`;
+      SET proveedor = $1, localidad = $2, provincia = $3, total = $4 WHERE id = $5`;
 
-    await pool.query(updateQuery, [proveedor, localidad, provincia, id]);
+    await pool.query(updateQuery, [proveedor, localidad, provincia, total, id]);
 
     // Obtener todas las filas actualizadas de la tabla 'proveedor'
     const selectQuery = `
       SELECT *
-      FROM proveedor`;
+      FROM proveedor
+      WHERE user_id = $1`;
 
-    const selectResult = await pool.query(selectQuery);
+    const selectResult = await pool.query(selectQuery, [req.userId]);
 
-    // Devolver todas las filas actualizadas de proveedores
+    // Devolver todas las órdenes como respuesta
     res.json(selectResult.rows);
   } catch (error) {
     console.error("Error al actualizar proveedor:", error);
@@ -128,14 +128,15 @@ export const actualizarTotalProveedor = async (req, res) => {
     // Obtener todos los proveedores después de la actualización
     const selectQuery = `
       SELECT *
-      FROM proveedor`;
+      FROM proveedor
+      WHERE user_id = $1`;
 
-    const allProveedores = await pool.query(selectQuery);
+    const selectResult = await pool.query(selectQuery, [req.userId]);
 
     // Devolver todos los proveedores junto con el mensaje de éxito
     return res.json({
       proveedor: result.rows[0],
-      proveedores: allProveedores.rows,
+      proveedores: selectResult.rows,
     });
   } catch (error) {
     console.error("Error al actualizar el total del proveedor:", error);
@@ -157,15 +158,16 @@ export const eliminarProveedor = async (req, res) => {
       });
     }
 
-    // Obtener todos los proveedores restantes después de la eliminación
+    // Obtener todas las filas actualizadas de la tabla 'proveedor'
     const selectQuery = `
       SELECT *
-      FROM proveedor`;
+      FROM proveedor
+      WHERE user_id = $1`;
 
-    const selectResult = await pool.query(selectQuery);
+    const selectResult = await pool.query(selectQuery, [req.userId]);
 
-    // Devolver todos los proveedores en formato JSON
-    return res.json(selectResult.rows);
+    // Devolver todas las órdenes como respuesta
+    res.json(selectResult.rows);
   } catch (error) {
     console.error("Error al eliminar el proveedor:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
@@ -208,14 +210,16 @@ export const actualizarProveedorCompra = async (req, res) => {
       });
     }
 
+    // Obtener todas las filas actualizadas de la tabla 'proveedor'
     const selectQuery = `
       SELECT *
-      FROM proveedor`;
+      FROM proveedor
+      WHERE user_id = $1`;
 
-    const selectResult = await pool.query(selectQuery);
+    const selectResult = await pool.query(selectQuery, [req.userId]);
 
-    // Devolver todos los proveedores en formato JSON
-    return res.json(selectResult.rows);
+    // Devolver todas las órdenes como respuesta
+    res.json(selectResult.rows);
   } catch (error) {
     console.error("Error al actualizar proveedor:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
@@ -248,17 +252,22 @@ export const agregarComprobante = async (req, res, next) => {
 
     // Obtener todas las filas de comprobantes después de la inserción
     const selectQueryComprobantes = `
-      SELECT *
-      FROM comprobantes`;
+        SELECT *
+  FROM comprobantes
+  WHERE user_id = $1`;
 
-    const selectResultComprobantes = await pool.query(selectQueryComprobantes);
+    const selectResultComprobantes = await pool.query(selectQueryComprobantes, [
+      req.userId,
+    ]);
 
     // Obtener todas las filas de proveedores después de la actualización
     const selectQueryProveedores = `
       SELECT *
-      FROM proveedor`;
+      FROM proveedor WHERE user_id = $1`;
 
-    const selectResultProveedores = await pool.query(selectQueryProveedores);
+    const selectResultProveedores = await pool.query(selectQueryProveedores, [
+      req.userId,
+    ]);
 
     // Obtener el proveedor específico actualizado
     const selectQueryProveedorActualizado = `
@@ -481,17 +490,21 @@ export const eliminarComprobanteActualizarProveedor = async (req, res) => {
 
     // Obtener todas las filas de comprobantes después de la inserción
     const selectQueryComprobantes = `
-      SELECT *
-      FROM comprobantes`;
+     SELECT *
+      FROM comprobantes WHERE user_id = $1`;
 
-    const selectResultComprobantes = await pool.query(selectQueryComprobantes);
+    const selectResultComprobantes = await pool.query(selectQueryComprobantes, [
+      req.userId,
+    ]);
 
     // Obtener todas las filas de proveedores después de la actualización
     const selectQueryProveedores = `
       SELECT *
-      FROM proveedor`;
+      FROM proveedor WHERE user_id = $1`;
 
-    const selectResultProveedores = await pool.query(selectQueryProveedores);
+    const selectResultProveedores = await pool.query(selectQueryProveedores, [
+      req.userId,
+    ]);
 
     return res.json({
       message: "Comprobante eliminado y total del proveedor actualizado",

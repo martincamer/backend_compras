@@ -43,7 +43,7 @@ router.get("/orden/:idOrden/producto/:idProducto", obtenerProductoOrden);
 
 router.put("/orden/:idOrden/producto/:idProducto", editarProductoOrden);
 
-router.put("/orden/estado/:id", actualizarOrdenEstado);
+router.put("/orden/estado/:id", isAuth, isAdmin, actualizarOrdenEstado);
 
 router.delete("/orden/:idOrden/producto/:idProducto", eliminarProductoOrden);
 

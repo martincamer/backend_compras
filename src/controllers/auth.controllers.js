@@ -82,6 +82,7 @@ export const signin = async (req, res) => {
   }
   const token = await createAccessToken({
     id: result.rows[0].id,
+    localidad: result.rows[0].localidad,
     role: result.rows[0].role_id,
   });
 
