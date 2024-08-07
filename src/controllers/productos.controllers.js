@@ -261,13 +261,18 @@ export const crearCategorias = async (req, res, next) => {
     );
 
     // Obtener todas las categorías después de la inserción
+    // const selectQuery = `
+    //   SELECT *
+    //   FROM categorias`;
+
     const selectQuery = `
       SELECT *
-      FROM categorias`;
+      FROM categorias
+      WHERE user_id = $1`;
 
-    const selectResult = await pool.query(selectQuery);
+    const selectResult = await pool.query(selectQuery, [req.userId]);
 
-    // Devolver todas las categorías en formato JSON
+    // Devolver todas las órdenes como respuesta
     res.json(selectResult.rows);
   } catch (error) {
     if (error.code === "23505") {
@@ -341,13 +346,15 @@ export const eliminarCategoria = async (req, res) => {
     }
 
     // Obtener todas las categorías restantes después de la eliminación
+
     const selectQuery = `
       SELECT *
-      FROM categorias`;
+      FROM categorias
+      WHERE user_id = $1`;
 
-    const selectResult = await pool.query(selectQuery);
+    const selectResult = await pool.query(selectQuery, [req.userId]);
 
-    // Devolver todas las categorías en formato JSON
+    // Devolver todas las órdenes como respuesta
     res.json(selectResult.rows);
   } catch (error) {
     console.error("Error al eliminar la categoría:", error);
