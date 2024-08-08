@@ -296,23 +296,56 @@ export const agregarComprobante = async (req, res, next) => {
   }
 };
 
-export const getComprobantes = async (req, res, next) => {
-  const { params } = req.query;
+// export const getComprobantes = async (req, res, next) => {
+//   const { params } = req.query;
 
+//   try {
+//     let query = "SELECT * FROM comprobantes";
+
+//     // Si se proporciona el parámetro "params", agregar filtro a la consulta
+//     if (params) {
+//       query += " WHERE params = $1";
+//       const result = await pool.query(query, [params]);
+//       return res.json(result.rows);
+//     } else {
+//       const result = await pool.query(query);
+//       return res.json(result.rows);
+//     }
+//   } catch (error) {
+//     console.error("Error al obtener comprobantes:", error);
+//     return res.status(500).json({ message: "Error interno del servidor" });
+//   }
+// };
+
+export const getProveedores = async (req, res, next) => {
+  const { params } = req.query; // Suponiendo que `params` es el id del proveedor que quieres consultar
+  
   try {
-    let query = "SELECT * FROM comprobantes";
+    // Consulta para obtener todos los proveedores (si es necesario)
+    const selectQueryProveedores = "SELECT * FROM proveedores";
+    const selectResultProveedores = await pool.query(selectQueryProveedores, [
+      req.userId,
+    ]);
 
-    // Si se proporciona el parámetro "params", agregar filtro a la consulta
-    if (params) {
-      query += " WHERE params = $1";
-      const result = await pool.query(query, [params]);
-      return res.json(result.rows);
-    } else {
-      const result = await pool.query(query);
-      return res.json(result.rows);
-    }
+    // Consulta para obtener un proveedor específico
+    const selectQueryProveedorActualizado = `
+      SELECT *
+      FROM proveedor
+      WHERE id = $1`;
+
+    const selectResultProveedorActualizado = await pool.query(
+      selectQueryProveedorActualizado,
+      [params]
+    );
+
+    // Respuesta con ambos resultados
+    return res.json({
+      proveedores: selectResultProveedores.rows,
+      proveedorActualizado: selectResultProveedorActualizado.rows[0]
+    });
+
   } catch (error) {
-    console.error("Error al obtener comprobantes:", error);
+    console.error("Error al obtener proveedores:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
   }
 };
